@@ -36,11 +36,11 @@ NTBL("global") global_t {
     uint32_t                voter_idx       = 0;
     uint32_t                project_idx     = 0;
     uint64_t                total_voter_cnt = 0;
-    name                    bbps_contract;
+    name                    bps_contract;
     name                    sys_contract    =_n("amax");
     eosio::public_key       bbp_mkey;
 
-    EOSLIB_SERIALIZE( global_t, (admin)(voter_idx)(total_voter_cnt)(bbps_contract)(sys_contract)(bbp_mkey))
+    EOSLIB_SERIALIZE( global_t, (admin)(voter_idx)(total_voter_cnt)(bps_contract)(sys_contract)(bbp_mkey))
 };
 
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
@@ -81,6 +81,8 @@ TBL bbp_t {
     string                          manifesto;                  // cn:xxx|en:xxx
     string                          issuance_plan;              // cn:xxx|en:xxx
     string                          reward_shared_plan;         // cn:xxx|en:xxx
+    string                          url;
+    uint64_t                        location;
     name                            status;
 
     time_point_sec                  created_at;
@@ -92,8 +94,11 @@ TBL bbp_t {
     bbp_t(){}
     uint64_t primary_key()const { return owner.value ; }
 
+    typedef eosio::multi_index< "bbps"_n,  bbp_t > idx_t;
+
     EOSLIB_SERIALIZE(bbp_t, (owner)(plan_id)(logo_uri)(org_name)(org_info)(dao_code)
-                            (manifesto)(issuance_plan)(status)
+                            (manifesto)(issuance_plan)(reward_shared_plan)
+                            (url)(location)(status)
                             (created_at)(updated_at)(quants)(nfts)(mkey))
 }
 

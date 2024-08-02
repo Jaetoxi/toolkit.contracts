@@ -7,6 +7,7 @@
 
 #include <amaxapplybbp/amaxapplybbp.db.hpp>
 #include <wasm_db.hpp>
+#in
 
 namespace amax {
 
@@ -83,16 +84,19 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
 
     ~amax_applybp() { _global.set( _gstate, get_self() ); }
 
-   ACTION init( const name& admin, const eosio::public_key& bbp_mkey, const name& bbps_contract){
+   ACTION init( const name& admin, const eosio::public_key& bbp_mkey, const name& bps_contract){
       require_auth( _self );
       _gstate.admin           = admin;
       _gstate.bbp_mkey        = bbp_mkey;
-      _gstate.bbps_contract   = bbps_contract;
+      _gstate.bps_contract   = bps_contract;
    }
 
    ACTION applybbp(const name& owner, const uint64_t plan_id, const string& logo_uri, const string& org_name,
                   const string& org_info, const name& dao_code, const string& manifesto,
-                  const string& issuance_plan, const string& reward_shared_plan, std::optional(eosio::public_key));
+                  const string& issuance_plan, const string& reward_shared_plan,                              
+                  const string& url, const uint32_t& location,
+                  const std::optional(eosio::public_key) pub_mkey);
+
    ACTION updatebbp(const name& owner, const uint64_t plan_id, const string& logo_uri, const string& org_name,
                   const string& org_info, const name& dao_code, const string& manifesto,
                   const string& issuance_plan, const string& reward_shared_plan );               
@@ -175,12 +179,47 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
 
       boolean _check_request_quant(
                      const& map<extend_symbol, asset>       plan_quants,
-                     const& map<extend_symbol, asset>       quants);
+                     const& map<extend_symbol, asset>       quants) {
+         for(auto& [symb, quant] : plan_quants) {
+            if(quants.find(symb) == quants.end()) {
+               return false;
+            }
+            if(quants[symb] < quant) {
+               return false;  
+            }
+         }
+         return true;
+      }
+
       boolean _check_request_nft(
                      const& map<extended_nsymbol, nasset>       plan_nfts,
-                     const& map<extended_nsymbol, nasset>       nfts);
+                     const& map<extended_nsymbol, nasset>       nfts) {
+            for(auto& [symb, quant] : plan_nfts) {
+               if(quants.find(symb) == nfts.end()) {
+                  return false;
+               }
+               if(quants[symb] < nfts) {
+                  return false;  
+               }
+            }
+            return true;
+      };
 
-      void _set_producer(const name& owner);
+      void _call_set_producer(
+                  const name& owner, const name& from_bank,
+                   const name& voter_account, const asset& quantity);
 
+      void _set_producer(const name& owner,
+                              const uint32_t& plan_id,
+                              const string& logo_uri,
+                              const string& org_name,
+                              const string& org_info,
+                              const name& dao_code,
+                              const string& reward_shared_plan,
+                              const string& manifesto,
+                              const string& issuance_plan, 
+                              const string& url,
+                              const uint32_t& location,
+                              const std::optional(eosio::public_key) pub_mkey);
 }
 } //namespace amax

@@ -107,14 +107,10 @@ class amax_system {
 
          [[eosio::action]]
          void vote( const name& voter, const std::vector<name>& producers );
-         
-         [[eosio::action]]
-         void addproducer( const name& producer, const block_signing_authority& producer_authority,
-                              const string& url, uint16_t location, optional<uint32_t> reward_shared_ratio );
+
 
          using vote_action = eosio::action_wrapper<"vote"_n, &amax_system::vote>;
          using addvote_action = eosio::action_wrapper<"addvote"_n, &amax_system::addvote>;
-         using addproducer_action = eosio::action_wrapper<"addproducer"_n, &amax_system::addproducer>;
 };
 
 }
