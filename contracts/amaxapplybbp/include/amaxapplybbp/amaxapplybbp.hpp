@@ -59,6 +59,13 @@ enum class err: uint8_t {
  */
 class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
    
+   #define TRANSFER(bank, to, quantity, memo) \
+    {	token::transfer_action act{ bank, { {_self, active_perm} } };\
+			act.send( _self, to, quantity , memo );}
+
+   static constexpr eosio::name MT_BANK{"amax.mtoken"_n};
+   static constexpr eosio::name AMAX_BANK{"amax.token"_n};
+
    private:
       dbc                 _dbc;
    public:
@@ -67,48 +74,113 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
    amax_applybp(eosio::name receiver, eosio::name code, datastream<const char*> ds): contract(receiver, code, ds),
          _dbc(get_self()),
          _global(get_self(), get_self().value),
-         _producer_tbl(get_self(), get_self().value)
+         _bbp_t(get_self(), get_self().value),
+         _voter_t(get_self(), get_self().value),
+         _plan_t(get_self(), get_self().value)
     {
         _gstate = _global.exists() ? _global.get() : global_t{};
-        
     }
 
     ~amax_applybp() { _global.set( _gstate, get_self() ); }
 
+   ACTION init( const name& admin, const eosio::public_key& bbp_mkey, const name& bbps_contract){
+      require_auth( _self );
+      _gstate.admin           = admin;
+      _gstate.bbp_mkey        = bbp_mkey;
+      _gstate.bbps_contract   = bbps_contract;
+   }
 
-   ACTION init( const name& admin);
+   ACTION applybbp(const name& owner, const uint64_t plan_id, const string& logo_uri, const string& org_name,
+                  const string& org_info, const name& dao_code, const string& manifesto,
+                  const string& issuance_plan, const string& reward_shared_plan );
+   ACTION updatebbp(const name& owner, const uint64_t plan_id, const string& logo_uri, const string& org_name,
+                  const string& org_info, const name& dao_code, const string& manifesto,
+                  const string& issuance_plan, const string& reward_shared_plan );               
 
+   [[eosio::on_notify("amax.mtoken::transfer")]]
+   void onrecv_mtoken( name from, name to, asset quantity, string memo );
 
-   ACTION applybp( const name& owner,
-                  const string& logo_uri,
-                  const string& org_name,
-                  const string& org_info,
-                  const name& dao_code,
-                  const string& reward_shared_plan,
-                  const string& manifesto,
-                  const string& issuance_plan);
+   [[eosio::on_notify("amax.token::transfer")]]
+   void onrecv_amax( name from, name to, asset quantity, string memo );
 
+   [[eosio::on_notify("amax.ntoken::transfer")]]
+   void onrecv_nft( name from, name to, nasset quantity, string memo );
 
-   ACTION applybbp(const name& owner,
-                  const string& logo_uri,
-                  const string& org_name,
-                  const string& org_info,
-                  const name& dao_code,
-                  const string& manifesto,
-                  const string& issuance_plan);
+   ACTION addvoters(const std::vector<name> &voters){
+      _check_admin();
+      CHECKC( voters.size() > 0 && voters.size() <= 50, err::OVERSIZED, "accounts oversized: " + std::to_string( voters.size()) )
+      auto voter_accts = make_voter_table( _self);
+      
 
+      for (auto& target : voters) {
+         CHECKC(is_account(target), err::ACCOUNT_INVALID, "account not existed: " + target.to_string() );
+         auto itr = voter_accts.find( target.value );
+         if (itr != voter_accts.end()) {
+            continue;   //found and skip
+         }
+         _gstate.total_voter_cnt++;
+         voter_accts.emplace( _self, [&]( auto& a ){
+            a.id           = _gstate.total_voter_cnt;
+            a.account      = target;
+            a.created_at   = current_time_point();
+         });
+      }
+   }
+
+   ACTION setplan(const uint64_t& project_id, const uint64_t& bbp_quota, 
+               map<extend_symbol, asset> quants, 
+               map<extend_symbol, nasset> nft){
+      _check_admin();
+      CHECKC( project_id > 0, err::PARAM_ERROR, "project_id invalid" )
+      CHECKC( bbp_quota > 0, err::PARAM_ERROR, "bbp_quota invalid" )
+      
+      auto plan_itr = _plant_t.find( project_id );
+       if(plan_itr == _plant_t.end()) {
+         _plan_t.emplace( _self, [&]( auto& a ){
+            a.id           = _gstate.total_plan_cnt;
+            a.project_id   = project_id;
+            a.bbp_quota    = bbp_quota;
+            a.quants       = quants;
+            a.nft          = nft;
+            a.created_at   = current_time_point();
+         });
+       } else {
+         _plan_t.modify( plan_itr, _self, [&]( auto& a ){
+            a.bbp_quota    = bbp_quota;
+            a.quants       = quants;
+            a.nft          = nft;
+         });
+       }
+   }
+
+   ACTION rmvoters(const std::vector<name> &voters){
+      _check_admin();
+   }
+
+   ACTION withdraw(const name& owner){
+      _check_admin();
+   }
+
+   void  _check_admin(){
+      CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
+   }
+   
    private:
-      global_singleton    _global;
-      global_t            _gstate;
-      producer_t::table   _producer_tbl;
+      global_singleton        _global;
+      global_t                _gstate;
+      bbp_t::table            _bbp_t;
+      voter_t::table          _voter_t;
+      plan_t::table           _plan_t;
 
-      void _set_producer(const name& owner,
-                  const string& logo_uri,
-                  const string& org_name,
-                  const string& org_info,
-                  const name& dao_code,
-                  const string& reward_shared_plan,
-                  const string& manifesto,
-                  const string& issuance_plan);
-};
+
+      boolean _check_request_quant(
+                     const& map<extend_symbol, asset>       plan_quants,
+                     const& map<extend_symbol, asset>       quants);
+      boolean _check_request_nft(
+                     const& map<extended_nsymbol, nasset>       plan_nfts,
+                     const& map<extended_nsymbol, nasset>       nfts);
+
+      void _set_producer(const name& owner);
+
+}
 } //namespace amax

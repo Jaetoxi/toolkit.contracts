@@ -43,34 +43,21 @@ using namespace mdao;
                                     + string("[[") + _self.to_string() + string("]] ") + msg); }
 
 
-   void amaxapplybbp::init( const name& admin){
-      require_auth( _self );
-
-      CHECKC( is_account(admin),err::ACCOUNT_INVALID,"admin invalid:" + admin.to_string())
-      // CHECKC( is_account(dao_contract),err::ACCOUNT_INVALID,"dao_contract invalid:" + dao_contract.to_string())
-
-      _gstate.admin = admin;
-      // _gstate.dao_contract = dao_contract;
-
-   }
-   
-   void amaxapplybbp::applybp(const name& owner,
+   void amaxapplybbp::applybbp( const name& owner,
+                              const uint32_t& plan_id,
                               const string& logo_uri,
                               const string& org_name,
                               const string& org_info,
                               const name& dao_code,
                               const string& reward_shared_plan,
                               const string& manifesto,
-                              const string& issuance_plan) {
+                              const string& issuance_plan){
       require_auth( owner );
-
-      auto prod_itr = _producer_tbl.find(owner.value);
-      CHECKC( prod_itr == _producer_tbl.end(), err::RECORD_EXISTING,"Application submitted:" + owner.to_string())
-
-      _set_producer(owner,logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan);
+      _set_producer(owner, plan_id, logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan);
    }
 
-   void amaxapplybbp::updatebp(const name& owner,
+   void amaxapplybbp::updatebbp(const name& owner,
+                              const uint32_t& plan_id,
                               const string& logo_uri,
                               const string& org_name,
                               const string& org_info,
@@ -86,23 +73,8 @@ using namespace mdao;
       _set_producer(owner,logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan);
    }
 
-   void amaxapplybbp::addproducer(const name& submiter,
-                              const name& owner,
-                              const string& logo_uri,
-                              const string& org_name,
-                              const string& org_info,
-                              const name& dao_code,
-                              const string& reward_shared_plan,
-                              const string& manifesto,
-                              const string& issuance_plan){
-      require_auth( submiter );
-      CHECKC( submiter == _gstate.admin,err::NO_AUTH,"Missing required authority of admin" )
-
-      _set_producer(owner,logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan);
-   }
-
-
    void amaxapplybbp::_set_producer(const name& owner,
+                              const uint32_t& plan_id,
                               const string& logo_uri,
                               const string& org_name,
                               const string& org_info,
@@ -113,34 +85,143 @@ using namespace mdao;
       CHECKC( logo_uri.size() <= MAX_LOGO_SIZE ,err::OVERSIZED ,"logo size must be <= " + to_string(MAX_LOGO_SIZE))
       CHECKC( org_name.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_name size must be <= " + to_string(MAX_TITLE_SIZE))
       CHECKC( org_info.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_info size must be <= " + to_string(MAX_TITLE_SIZE))
-      // CHECKC( manifesto.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"manifesto size must be <= " + to_string(MAX_TITLE_SIZE))
       CHECKC( issuance_plan.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"issuance_plan size must be <= " + to_string(MAX_TITLE_SIZE))
       CHECKC( reward_shared_plan.size() <= MAX_TITLE_SIZE, err::OVERSIZED, "reward_shared_ratio is too large than 10000");
 
-      // dao_info_t::idx_t dao_info( _gstate.dao_contract, _gstate.dao_contract.value);
+      auto prod_itr = _bbp_t.find(owner.value);
+      if(prod_itr !=  _bbp_t.end() && (prod_itr->status != ProducerStatus::INIT)){
+         CHECKC( false, err::STATUS_ERROR, "Information cant been changed")
+      } 
 
-      // auto dao_itr = dao_info.find( dao_code.value);
-      // CHECKC( dao_itr != dao_info.end(),err::RECORD_NOT_FOUND,"dao_code does not exist:" + dao_code.to_string())
-
-      auto prod_itr = _producer_tbl.find(owner.value);
-      // CHECKC( prod_itr != _producer_tbl.end(),err::RECORD_EXISTING,"Application submitted:" + owner.to_string())
-
-      db::set(_producer_tbl, prod_itr, _self, [&]( auto& p, bool is_new ) {
+      db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
          if (is_new) {
             p.owner        =  owner;
             p.created_at   = current_time_point();
-            p.status       = ProducerStatus::DISABLE;
+            p.status       = ProducerStatus::INIT;
          }
-
+         p.plan_id               = plan_id;
          p.logo_uri              = logo_uri;
          p.org_name              = org_name;
          p.org_info              = org_info;
          p.dao_code              = dao_code;
          p.reward_shared_plan    = reward_shared_plan;
-         p.manifesto            = manifesto;
+         p.manifesto             = manifesto;
          p.issuance_plan         = issuance_plan;
-         // p.last_edited_at        = current_time_point();
+         p.updated_at            = current_time_point();
       });
    }
+
+
+
+   [[eosio::on_notify("amax.mtoken::transfer")]]
+   void amaxapplybbp::onrecv_mtoken( name from, name to, asset quantity, string memo ){
+
+   }
+
+   [[eosio::on_notify("amax.token::transfer")]]
+   void amaxapplybbp::onrecv_amax( name from, name to, asset quantity, string memo ){
+      if (from == get_self()) { return; }
+      if (to != _self) { return; }
+
+      if (from == get_self()) { return; }
+      if( to != _self ) return;
+      if( get_first_receiver() != MT_BANK ) return;
+      auto prod_itr = _bbp_t.find(owner.value);
+   
+      CHECKC( prod_itr !=  _bbp_t.end(), err::STATUS_ERROR, "Information cant been changed")
+      //进行中
+      CHECK((prod_itr->status != ProducerStatus::INIT))
+      CHECKC( quantity.symbol == AMAX_SYMBOL, err::SYMBOL_INVALID, "Invalid symbol" )
+
+      auto from_bank = get_first_receiver();
+      auto symbol = quantity.symbol;
+      const auto& symb = extended_symbol(quantity.symbol, from_bank);
+
+      //check project symbol required
+      CHECKC( prod_itr->plan_id != 0, err::SYMBOL_INVALID, "Invalid symbol" )
+      auto plan_itr = _plan_tbl.find(prod_itr->plan_id);
+      CHECKC( plan_itr != _plan_tbl.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
+      if( plan_itr->quants.find(symb) == plan_itr->quants.end() ){
+         CHECKC( false, err::SYMBOL_INVALID, "Invalid symbol" )
+      }
+      auto require_qunt = plan_itr->quants[symb];
+      if(prod_itr->quants[symb] == null) {
+         prod_itr->quants[symb] = quantity;
+      } else {
+         prod_itr->quants[symb] += quantity;
+      }
+      if(!(_check_request_quant(plan_itr->quants, prod_itr->quants) &&
+      _check_request_nft(plan_itr->nfts, prod_itr->nfts))) {
+         db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
+            p.quants = prod_itr->quants;
+            p.nfts = prod_itr->nfts;
+            p.updated_at = current_time_point();
+         });
+         return;
+      }
+      //paid finished
+      db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
+         p.quants = prod_itr->quants;
+         p.nfts = prod_itr->nfts;
+         p.status = ProducerStatus::APPROVED;
+         p.updated_at = current_time_point();
+      });
+      //allocate a partner
+      _gstate.voter_idx++;
+      auto voter_itr = _voter_t.find(_gstate.voter_idx);
+      CHECKC( voter_itr != _voter_t.end(), err::RECORD_NOT_FOUND, "voter not found" )
+      db::set(_voter_t, voter_itr, _self, [&]( auto& p, bool is_new ) {
+         p.bbp_account = owner;
+         p.updated_at = current_time_point();
+      });
+
+      //todo: transfer to owner
+      TRANSFER( from_bank, voter_itr->voter_account, require_qunt, "bbp");
+
+      _set_producer(owenr);
+   
+   }
+
+   void amaxapplybbp::_set_producer(const name& owner){
+      auto prod_itr = _bbp_t.find(owner.value);
+      CHECKC( prod_itr ==  _bbp_t.end(),err::RECORD_NOT_FOUND ,"bbp not found:" + owner.to_string())
+
+   }
+
+   boolean amaxapplybbp::_check_request_quant(
+                     const& map<extend_symbol, asset>       plan_quants,
+                     const& map<extend_symbol, asset>       quants) {
+      for(auto& [symb, quant] : plan_quants) {
+         if(quants.find(symb) == quants.end()) {
+            return false;
+         }
+         if(quants[symb] < quant) {
+            return false;  
+         }
+      }
+      return true;
+   }
+
+   boolean amaxapplybbp::_check_request_nft(
+                     const& map<extended_nsymbol, nasset>       plan_nfts,
+                     const& map<extended_nsymbol, nasset>       nfts) {
+      for(auto& [symb, quant] : plan_nfts) {
+         if(quants.find(symb) == nfts.end()) {
+            return false;
+         }
+         if(quants[symb] < nfts) {
+            return false;  
+         }
+      }
+      return true;
+   }
+
+   
+   [[eosio::on_notify("amax.ntoken::transfer")]]
+   void amaxapplybbp::onrecv_nft( name from, name to, nasset quantity, string memo ){
+      if (from == get_self()) { return; }
+      if (to != _self) { return; }
+   }
+
 
 }//namespace amax
