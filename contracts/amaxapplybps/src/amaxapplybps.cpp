@@ -1,6 +1,6 @@
-#include <amax_system.hpp>
-#include <amaxapplybps/amaxapplybps.hpp>
 
+#include <amaxapplybps/amaxapplybps.hpp>
+#include <variant>
 #include <math.hpp>
 #include <utils.hpp>
 
