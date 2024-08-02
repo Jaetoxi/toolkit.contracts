@@ -85,8 +85,9 @@ class [[eosio::contract("amax.applybp")]] amaxapplybps : public contract {
    }
 
    ACTION addproducer(const name& submiter, const name& producter,
-                     const block_signing_authority& producer_authority,
-                     const string& url, uint16_t location, optional<uint32_t> reward_shared_ratio);
+                     const eosio::public_key& mpubkey,
+                     const string& url, uint16_t location,
+                      optional<uint32_t> reward_shared_ratio);
 
    ACTION setstatus( const name& submiter, const name& owner, const name& status);
 

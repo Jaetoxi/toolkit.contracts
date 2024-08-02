@@ -51,7 +51,7 @@ using namespace mdao;
                               const name& dao_code,
                               const string& reward_shared_plan,
                               const string& manifesto,
-                              const string& issuance_plan){
+                              const string& issuance_plan, ){
       require_auth( owner );
       _set_producer(owner, plan_id, logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan);
    }
@@ -81,7 +81,8 @@ using namespace mdao;
                               const name& dao_code,
                               const string& reward_shared_plan,
                               const string& manifesto,
-                              const string& issuance_plan){
+                              const string& issuance_plan, 
+                              const std::optional(eosio::public_key) pub_mkey){
       CHECKC( logo_uri.size() <= MAX_LOGO_SIZE ,err::OVERSIZED ,"logo size must be <= " + to_string(MAX_LOGO_SIZE))
       CHECKC( org_name.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_name size must be <= " + to_string(MAX_TITLE_SIZE))
       CHECKC( org_info.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_info size must be <= " + to_string(MAX_TITLE_SIZE))
@@ -108,6 +109,10 @@ using namespace mdao;
          p.manifesto             = manifesto;
          p.issuance_plan         = issuance_plan;
          p.updated_at            = current_time_point();
+         if(pub_mkey.has_value()) 
+            p.mkey               = pub_mkey.value();
+         else 
+            p.mkey              = _gstate.bbp_mkey;
       });
    }
 
@@ -151,7 +156,7 @@ using namespace mdao;
          prod_itr->quants[symb] += quantity;
       }
       if(!(_check_request_quant(plan_itr->quants, prod_itr->quants) &&
-      _check_request_nft(plan_itr->nfts, prod_itr->nfts))) {
+            _check_request_nft(plan_itr->nfts, prod_itr->nfts))) {
          db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
             p.quants = prod_itr->quants;
             p.nfts = prod_itr->nfts;
@@ -178,12 +183,13 @@ using namespace mdao;
       //todo: transfer to owner
       TRANSFER( from_bank, voter_itr->voter_account, require_qunt, "bbp");
 
-      _set_producer(owenr);
+      _set_producer(owner);
    }
 
    void amaxapplybbp::_set_producer(const name& owner){
-      auto prod_itr = _bbp_t.find(owner.value);
-      CHECKC( prod_itr ==  _bbp_t.end(),err::RECORD_NOT_FOUND ,"bbp not found:" + owner.to_string())
+      auto itr = _bbp_t.find(owner.value);
+      CHECKC( itr ==  _bbp_t.end(),err::RECORD_NOT_FOUND ,"bbp not found:" + owner.to_string())
+
 
    }
 

@@ -92,7 +92,7 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
 
    ACTION applybbp(const name& owner, const uint64_t plan_id, const string& logo_uri, const string& org_name,
                   const string& org_info, const name& dao_code, const string& manifesto,
-                  const string& issuance_plan, const string& reward_shared_plan );
+                  const string& issuance_plan, const string& reward_shared_plan, std::optional(eosio::public_key));
    ACTION updatebbp(const name& owner, const uint64_t plan_id, const string& logo_uri, const string& org_name,
                   const string& org_info, const name& dao_code, const string& manifesto,
                   const string& issuance_plan, const string& reward_shared_plan );               
