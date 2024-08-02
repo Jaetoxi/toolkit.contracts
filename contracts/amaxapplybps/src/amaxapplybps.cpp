@@ -1,4 +1,4 @@
-#include <amax.applybp.hpp>
+#include <amax_system.hpp>
 #include <amaxapplybps/amaxapplybps.hpp>
 
 #include <math.hpp>
@@ -13,20 +13,15 @@ using namespace amax;
    { if (!(exp)) eosio::check(false, string("[[") + to_string((int)code) + string("]] ")  \
                                     + string("[[") + _self.to_string() + string("]] ") + msg); }
 
-   void amaxapplybps::addproducer(const name& submiter,
-                              const name& owner,
-                              const string& logo_uri,
-                              const string& org_name,
-                              const string& org_info,
-                              const name& dao_code,
-                              const string& reward_shared_plan,
-                              const string& manifesto,
-                              const string& issuance_plan){
+   void amaxapplybps::addproducer(const name& submiter, const name& producter,
+                              const block_signing_authority& producer_authority,
+                              const std::string& url, uint16_t location, std::optional<uint32_t> reward_shared_ratio){
       require_auth( submiter );
       CHECKC( submiter == _gstate.admin || submiter == _gstate.bbp_contract,err::NO_AUTH,
                "Missing required authority of admin" )
-      amax_applybp::addproducer_action addproducer_act( _gstate.bpapply_contract, {_self, "active"_n} );
-      addproducer_act.send(_self,  owner, logo_uri, org_name, org_info, dao_code, reward_shared_plan, manifesto, issuance_plan);
+      amax_system::addproducer_action addproducer_act( _gstate.sys_contract, {_self, "active"_n} );
+      addproducer_act.send(producter, producer_authority, url, location, reward_shared_ratio);
+      //添加公钥
    }
 
 }//namespace amax

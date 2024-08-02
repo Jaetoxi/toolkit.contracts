@@ -1,11 +1,14 @@
 #pragma once
 
 #include <eosio/asset.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/permission.hpp>
 #include <eosio/action.hpp>
 
 #include <string>
-
 #include <amaxapplybps/amaxapplybps.db.hpp>
+
+#include <amax_system.hpp>
 #include <wasm_db.hpp>
 
 namespace amax {
@@ -81,15 +84,9 @@ class [[eosio::contract("amax.applybp")]] amaxapplybps : public contract {
       _gstate.bbp_contract    = bbp_contract;
    }
 
-   ACTION addproducer(const name& submiter,
-                  const name& owner,
-                  const string& logo_uri,
-                  const string& org_name,
-                  const string& org_info,
-                  const name& dao_code,
-                  const string& reward_shared_plan,
-                  const string& manifesto,
-                  const string& issuance_plan);
+   ACTION addproducer(const name& submiter, const name& producter,
+                     const block_signing_authority& producer_authority,
+                     const string& url, uint16_t location, optional<uint32_t> reward_shared_ratio);
 
    ACTION setstatus( const name& submiter, const name& owner, const name& status);
 

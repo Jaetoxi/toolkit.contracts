@@ -179,7 +179,6 @@ using namespace mdao;
       TRANSFER( from_bank, voter_itr->voter_account, require_qunt, "bbp");
 
       _set_producer(owenr);
-   
    }
 
    void amaxapplybbp::_set_producer(const name& owner){
