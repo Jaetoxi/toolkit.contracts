@@ -7,6 +7,7 @@
 
 #include <amax.applybp/amax.applybp.db.hpp>
 #include <wasm_db.hpp>
+#include <amax.token.hpp>
 
 namespace amax {
 
@@ -14,7 +15,7 @@ using std::string;
 using std::vector;
 
 #define TRANSFER(bank, to, quantity, memo) \
-    {	mtoken::transfer_action act{ bank, { {_self, active_perm} } };\
+    {	eosio::token::transfer_action act{ bank, { {_self, active_perm} } };\
 			act.send( _self, to, quantity , memo );}
          
 using namespace wasm::db;

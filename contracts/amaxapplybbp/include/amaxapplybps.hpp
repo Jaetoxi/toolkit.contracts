@@ -22,6 +22,6 @@ class amaxapplybps {
                      std::optional<uint32_t> reward_shared_ratio);
 
    using addproducer_action = eosio::action_wrapper<"addproducer"_n, &amaxapplybps::addproducer>;
-`
+
 };
 } //namespace amax

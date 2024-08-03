@@ -35,5 +35,5 @@ add_subdirectory(l2amc.owner)
 # add_subdirectory(l2amc.proxy)
 
 # add_subdirectory(amax.applybp)
-# add_subdirectory(amaxapplybbp)
+add_subdirectory(amaxapplybbp)
 add_subdirectory(amaxapplybps)

@@ -106,11 +106,12 @@ class amax_system {
          void addvote( const name& voter, const asset& votes );
 
          [[eosio::action]]
-         void vote( const name& voter, const std::vector<name>& producers );
+         void vote( const name& voter, const std::vector<name>& producers);
 
 
-         using vote_action = eosio::action_wrapper<"vote"_n, &amax_system::vote>;
          using addvote_action = eosio::action_wrapper<"addvote"_n, &amax_system::addvote>;
+         using vote_action = eosio::action_wrapper<"vote"_n, &amax_system::vote>;
+
 };
 
 }

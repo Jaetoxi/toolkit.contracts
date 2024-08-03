@@ -6,17 +6,16 @@
 #include <string>
 
 #include <amaxapplybbp/amaxapplybbp.db.hpp>
+#include <amaxapplybps.hpp>
 #include <wasm_db.hpp>
-#in
+#include <optional>
+#include <map>
+#include <amax.token.hpp>
 
 namespace amax {
 
 using std::string;
 using std::vector;
-
-#define TRANSFER(bank, to, quantity, memo) \
-    {	mtoken::transfer_action act{ bank, { {_self, active_perm} } };\
-			act.send( _self, to, quantity , memo );}
          
 using namespace wasm::db;
 using namespace eosio;
@@ -58,11 +57,11 @@ enum class err: uint8_t {
  *
  * Similarly, the `stats` multi-index table, holds instances of `currency_stats` objects for each row, which contains information about current supply, maximum supply, and the creator account for a symbol token. The `stats` table is scoped to the token symbol.  Therefore, when one queries the `stats` table for a token symbol the result is one single entry/row corresponding to the queried symbol token if it was previously created, or nothing, otherwise.
  */
-class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
-   
-   #define TRANSFER(bank, to, quantity, memo) \
-    {	token::transfer_action act{ bank, { {_self, active_perm} } };\
-			act.send( _self, to, quantity , memo );}
+class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
+
+   #define CHECKC(exp, code, msg) \
+   { if (!(exp)) eosio::check(false, string("[[") + to_string((int)code) + string("]] ")  \
+                                    + string("[[") + _self.to_string() + string("]] ") + msg); }
 
    static constexpr eosio::name MT_BANK{"amax.mtoken"_n};
    static constexpr eosio::name AMAX_BANK{"amax.token"_n};
@@ -72,7 +71,7 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
    public:
       using contract::contract;
   
-   amax_applybp(eosio::name receiver, eosio::name code, datastream<const char*> ds): contract(receiver, code, ds),
+   amaxapplybbp(eosio::name receiver, eosio::name code, datastream<const char*> ds): contract(receiver, code, ds),
          _dbc(get_self()),
          _global(get_self(), get_self().value),
          _bbp_t(get_self(), get_self().value),
@@ -82,7 +81,7 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
         _gstate = _global.exists() ? _global.get() : global_t{};
     }
 
-    ~amax_applybp() { _global.set( _gstate, get_self() ); }
+    ~amaxapplybbp() { _global.set( _gstate, get_self() ); }
 
    ACTION init( const name& admin, const eosio::public_key& bbp_mkey, const name& bps_contract){
       require_auth( _self );
@@ -91,15 +90,27 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
       _gstate.bps_contract   = bps_contract;
    }
 
-   ACTION applybbp(const name& owner, const uint64_t plan_id, const string& logo_uri, const string& org_name,
-                  const string& org_info, const name& dao_code, const string& manifesto,
-                  const string& issuance_plan, const string& reward_shared_plan,                              
-                  const string& url, const uint32_t& location,
-                  const std::optional(eosio::public_key) pub_mkey);
+   ACTION applybbp(const name& owner,
+                              const uint32_t& plan_id,
+                              const string& logo_uri,
+                              const string& org_name,
+                              const string& org_info,
+                              const name& dao_code,
+                              const string& reward_shared_plan,
+                              const string& manifesto,
+                              const string& issuance_plan, 
+                              const string& url,
+                              const uint32_t& location,
+                              const std::optional<eosio::public_key> pub_mkey);
 
    ACTION updatebbp(const name& owner, const uint64_t plan_id, const string& logo_uri, const string& org_name,
                   const string& org_info, const name& dao_code, const string& manifesto,
-                  const string& issuance_plan, const string& reward_shared_plan );               
+                  const string& issuance_plan, const string& reward_shared_plan,
+                  const string& url,
+                     const uint32_t& location,
+                     const std::optional<eosio::public_key> pub_mkey ){
+
+   }              
 
    [[eosio::on_notify("amax.mtoken::transfer")]]
    void onrecv_mtoken( name from, name to, asset quantity, string memo );
@@ -115,7 +126,6 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
       CHECKC( voters.size() > 0 && voters.size() <= 50, err::OVERSIZED, "accounts oversized: " + std::to_string( voters.size()) )
       auto voter_accts = make_voter_table( _self);
       
-
       for (auto& target : voters) {
          CHECKC(is_account(target), err::ACCOUNT_INVALID, "account not existed: " + target.to_string() );
          auto itr = voter_accts.find( target.value );
@@ -124,35 +134,34 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
          }
          _gstate.total_voter_cnt++;
          voter_accts.emplace( _self, [&]( auto& a ){
-            a.id           = _gstate.total_voter_cnt;
-            a.account      = target;
-            a.created_at   = current_time_point();
+            a.id              = _gstate.total_voter_cnt;
+            a.voter_account   = target;
+            a.created_at      = current_time_point();
          });
       }
    }
 
-   ACTION setplan(const uint64_t& project_id, const uint64_t& bbp_quota, 
-               map<extend_symbol, asset> quants, 
-               map<extend_symbol, nasset> nft){
+   ACTION setplan(const uint64_t& plan_id, const uint64_t& bbp_quota, 
+               map<extended_symbol, asset> quants, 
+               map<extended_nsymbol, nasset> nfts){
       _check_admin();
-      CHECKC( project_id > 0, err::PARAM_ERROR, "project_id invalid" )
+      CHECKC( plan_id > 0, err::PARAM_ERROR, "plan_id invalid" )
       CHECKC( bbp_quota > 0, err::PARAM_ERROR, "bbp_quota invalid" )
       
-      auto plan_itr = _plant_t.find( project_id );
-       if(plan_itr == _plant_t.end()) {
+      auto plan_itr = _plan_t.find( plan_id );
+       if(plan_itr == _plan_t.end()) {
          _plan_t.emplace( _self, [&]( auto& a ){
-            a.id           = _gstate.total_plan_cnt;
-            a.project_id   = project_id;
+            a.id           = plan_id;
             a.bbp_quota    = bbp_quota;
             a.quants       = quants;
-            a.nft          = nft;
+            a.nfts         = nfts;
             a.created_at   = current_time_point();
          });
        } else {
          _plan_t.modify( plan_itr, _self, [&]( auto& a ){
             a.bbp_quota    = bbp_quota;
             a.quants       = quants;
-            a.nft          = nft;
+            a.nfts          = nfts;
          });
        }
    }
@@ -172,33 +181,33 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
    private:
       global_singleton        _global;
       global_t                _gstate;
-      bbp_t::table            _bbp_t;
-      voter_t::table          _voter_t;
-      plan_t::table           _plan_t;
+      bbp_t::idx_t            _bbp_t;
+      voter_t::idx_t          _voter_t;
+      plan_t::idx_t           _plan_t;
 
 
-      boolean _check_request_quant(
-                     const& map<extend_symbol, asset>       plan_quants,
-                     const& map<extend_symbol, asset>       quants) {
+      bool _check_request_quant(
+                     const std::map<extended_symbol, asset>&       plan_quants,
+                     const std::map<extended_symbol, asset>&       quants) {
          for(auto& [symb, quant] : plan_quants) {
             if(quants.find(symb) == quants.end()) {
                return false;
             }
-            if(quants[symb] < quant) {
+            if(quants.at(symb) < quant) {
                return false;  
             }
          }
          return true;
       }
 
-      boolean _check_request_nft(
-                     const& map<extended_nsymbol, nasset>       plan_nfts,
-                     const& map<extended_nsymbol, nasset>       nfts) {
-            for(auto& [symb, quant] : plan_nfts) {
-               if(quants.find(symb) == nfts.end()) {
+      bool _check_request_nft(
+                     const std::map<extended_nsymbol, nasset>&       plan_nfts,
+                     const std::map<extended_nsymbol, nasset>&       nfts) {
+            for(auto& [symb, nft] : plan_nfts) {
+               if(nfts.find(symb) == nfts.end()) {
                   return false;
                }
-               if(quants[symb] < nfts) {
+               if(nfts.at(symb) < nft) {
                   return false;  
                }
             }
@@ -220,6 +229,6 @@ class [[eosio::contract("amaxapplybbp")]] amax_applybp : public contract {
                               const string& issuance_plan, 
                               const string& url,
                               const uint32_t& location,
-                              const std::optional(eosio::public_key) pub_mkey);
-}
+                              const std::optional<eosio::public_key> pub_mkey);
+};
 } //namespace amax

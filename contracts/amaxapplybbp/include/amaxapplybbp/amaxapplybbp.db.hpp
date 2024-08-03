@@ -1,5 +1,6 @@
 #pragma once
 
+#include <amax.ntoken/amax.nasset.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/privileged.hpp>
 #include <eosio/singleton.hpp>
@@ -25,6 +26,12 @@ using namespace eosio;
 #define TBL struct [[eosio::table, eosio::contract("amaxapplybbp")]]
 #define NTBL(name) struct [[eosio::table(name), eosio::contract("amaxapplybbp")]]
 
+static constexpr name      SYS_BANK         = "amax.token"_n;
+static constexpr symbol    AMAX_SYMBOL      = symbol(symbol_code("AMAX"), 8);
+
+static constexpr uint32_t MAX_LOGO_SIZE        = 512;
+static constexpr uint32_t MAX_TITLE_SIZE        = 2048;
+
 namespace ProducerStatus {
     static constexpr eosio::name INIT           { "init"_n   };
     static constexpr eosio::name REFUNDING      { "refunding"_n   };
@@ -37,7 +44,7 @@ NTBL("global") global_t {
     uint32_t                project_idx     = 0;
     uint64_t                total_voter_cnt = 0;
     name                    bps_contract;
-    name                    sys_contract    =_n("amax");
+    name                    sys_contract    =name("amax");
     eosio::public_key       bbp_mkey;
 
     EOSLIB_SERIALIZE( global_t, (admin)(voter_idx)(total_voter_cnt)(bps_contract)(sys_contract)(bbp_mkey))
@@ -56,8 +63,8 @@ TBL voter_t {
     voter_t(){}
     uint64_t primary_key()const { return id ; }
 
-    uint64_t  by_voter_account() const { return voter_account.value(); }
-    uint64_t  by_bbp_account() const { return bbp_account.value(); }
+    uint64_t  by_voter_account() const { return voter_account.value; }
+    uint64_t  by_bbp_account() const { return bbp_account.value; }
     
     typedef eosio::multi_index<"votermap"_n, voter_t,
         indexed_by<"bbp"_n, const_mem_fun<voter_t, uint64_t, &voter_t::by_voter_account> >,
@@ -65,7 +72,7 @@ TBL voter_t {
     > idx_t;
 
     EOSLIB_SERIALIZE(voter_t, (id)(voter_account)(bbp_account)(created_at)(updated_at))
-}
+};
 
 typedef eosio::multi_index< "votermap"_n, voter_t > voters;
 inline static voters make_voter_table( const name& self ) { return voters(self, self.value); }
@@ -87,7 +94,7 @@ TBL bbp_t {
 
     time_point_sec                  created_at;
     time_point_sec                  updated_at;
-    map<extend_symbol, asset>       quants;
+    map<extended_symbol, asset>       quants;
     map<extended_nsymbol, nasset>   nfts;
     eosio::public_key               mkey;
 
@@ -100,13 +107,13 @@ TBL bbp_t {
                             (manifesto)(issuance_plan)(reward_shared_plan)
                             (url)(location)(status)
                             (created_at)(updated_at)(quants)(nfts)(mkey))
-}
+};
 
 TBL plan_t {
     uint64_t                        id;                 //PK
     uint64_t                        bbp_quota;
     uint64_t                        finish_bbp_account;
-    map<extend_symbol, asset>       quants;
+    map<extended_symbol, asset>     quants;
     map<extended_nsymbol, nasset>   nfts;
     time_point_sec                  created_at;
     time_point_sec                  updated_at;
@@ -125,7 +132,7 @@ TBL plan_t {
 
     EOSLIB_SERIALIZE(plan_t, (id)(bbp_quota)(finish_bbp_account)(quants)(nfts)(created_at)(updated_at))
 
-}
+};
 
 
 } //namespace amax

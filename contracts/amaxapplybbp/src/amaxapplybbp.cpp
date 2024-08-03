@@ -38,9 +38,6 @@ using namespace std;
 using namespace amax;
 using namespace mdao;
 
-#define CHECKC(exp, code, msg) \
-   { if (!(exp)) eosio::check(false, string("[[") + to_string((int)code) + string("]] ")  \
-                                    + string("[[") + _self.to_string() + string("]] ") + msg); }
 
 
    void amaxapplybbp::applybbp( const name& owner,
@@ -54,7 +51,7 @@ using namespace mdao;
                               const string& issuance_plan, 
                               const string& url,
                               const uint32_t& location,
-                              const std::optional(eosio::public_key) pub_mkey){
+                              const std::optional<eosio::public_key> pub_mkey){
       require_auth( owner );
       _set_producer(owner, plan_id, logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan, url, location, pub_mkey);
    }
@@ -87,7 +84,7 @@ using namespace mdao;
                               const string& issuance_plan, 
                               const string& url,
                               const uint32_t& location,
-                              const std::optional(eosio::public_key) pub_mkey){
+                              const std::optional<eosio::public_key> pub_mkey){
       CHECKC( logo_uri.size() <= MAX_LOGO_SIZE ,err::OVERSIZED ,"logo size must be <= " + to_string(MAX_LOGO_SIZE))
       CHECKC( org_name.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_name size must be <= " + to_string(MAX_TITLE_SIZE))
       CHECKC( org_info.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_info size must be <= " + to_string(MAX_TITLE_SIZE))
@@ -121,8 +118,6 @@ using namespace mdao;
       });
    }
 
-
-
    [[eosio::on_notify("amax.mtoken::transfer")]]
    void amaxapplybbp::onrecv_mtoken( name from, name to, asset quantity, string memo ){
 
@@ -136,31 +131,30 @@ using namespace mdao;
       if (from == get_self()) { return; }
       if( to != _self ) return;
       if( get_first_receiver() != MT_BANK ) return;
-      auto prod_itr = _bbp_t.find(owner.value);
+      auto prod_itr = _bbp_t.find(from.value);
    
-      CHECKC( prod_itr !=  _bbp_t.end(), err::STATUS_ERROR, "Information cant been changed")
+      CHECKC( prod_itr != _bbp_t.end(), err::STATUS_ERROR, "Information cant been changed")
       //进行中
-      CHECK((prod_itr->status != ProducerStatus::INIT))
-      CHECKC( quantity.symbol == AMAX_SYMBOL, err::SYMBOL_INVALID, "Invalid symbol" )
+      CHECKC( prod_itr->status != ProducerStatus::INIT, err::STATUS_ERROR, "Information cant been changed")
+      CHECKC( quantity.symbol == AMAX_SYMBOL, err::SYMBOL_MISMATCH, "Invalid symbol" )
 
       auto from_bank = get_first_receiver();
       auto symbol = quantity.symbol;
       const auto& symb = extended_symbol(quantity.symbol, from_bank);
 
       //check project symbol required
-      CHECKC( prod_itr->plan_id != 0, err::SYMBOL_INVALID, "Invalid symbol" )
-      auto plan_itr = _plan_tbl.find(prod_itr->plan_id);
-      CHECKC( plan_itr != _plan_tbl.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
+      auto plan_itr = _plan_t.find(prod_itr->plan_id);
+      CHECKC( plan_itr != _plan_t.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
       if( plan_itr->quants.find(symb) == plan_itr->quants.end() ){
-         CHECKC( false, err::SYMBOL_INVALID, "Invalid symbol" )
+         CHECKC( false, err::SYMBOL_MISMATCH, "Invalid symbol" )
       }
-      auto require_qunt = plan_itr->quants[symb];
-      if(prod_itr->quants[symb] == null) {
-         prod_itr->quants[symb] = quantity;
+      auto plan_quants = plan_itr->quants;
+      if(plan_quants.count(symb) == 0) {
+         plan_quants[symb] = quantity;
       } else {
-         prod_itr->quants[symb] += quantity;
+         plan_quants[symb] += quantity;
       }
-      if(!(_check_request_quant(plan_itr->quants, prod_itr->quants) &&
+      if(!(_check_request_quant(plan_itr->quants, plan_quants) &&
             _check_request_nft(plan_itr->nfts, prod_itr->nfts))) {
          db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
             p.quants = prod_itr->quants;
@@ -171,9 +165,9 @@ using namespace mdao;
       }
       //paid finished
       db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
-         p.quants = prod_itr->quants;
-         p.nfts = prod_itr->nfts;
-         p.status = ProducerStatus::APPROVED;
+         p.quants = plan_quants;
+         // p.nfts = prod_itr->nfts;
+         p.status = ProducerStatus::REFUNDING;
          p.updated_at = current_time_point();
       });
       //allocate a partner
@@ -181,13 +175,13 @@ using namespace mdao;
       auto voter_itr = _voter_t.find(_gstate.voter_idx);
       CHECKC( voter_itr != _voter_t.end(), err::RECORD_NOT_FOUND, "voter not found" )
       db::set(_voter_t, voter_itr, _self, [&]( auto& p, bool is_new ) {
-         p.bbp_account = owner;
+         p.bbp_account = from;
          p.updated_at = current_time_point();
       });
 
       //todo: transfer to owner
 
-      _call_set_producer(owner, from_bank, voter_itr->voter_account, quantity);
+      _call_set_producer(from, from_bank, voter_itr->voter_account, quantity);
    }
 
    void amaxapplybbp::_call_set_producer(
@@ -198,16 +192,17 @@ using namespace mdao;
       //add producer
       auto itr = _bbp_t.find(owner.value);
       CHECKC( itr ==  _bbp_t.end(),err::RECORD_NOT_FOUND ,"bbp not found:" + owner.to_string())
-      amaxapplybps::addproducer_action addproducer_act(_gstate.bbps_contract, {get_self(), "active"_n});
+      amaxapplybps::addproducer_action addproducer_act(_gstate.bps_contract, {get_self(), "active"_n});
       addproducer_act.send(get_self(), owner, itr->mkey, itr->url, itr->location, 0);
 
       //add vote 
-      amaxapplybps::addvote_action add_vote_act(_gstate.sys_contract, {get_self(), "active"_n});
-      add_vote_act.send(get_self(), owner, quantity);
+      amax_system::addvote_action add_vote_act(_gstate.sys_contract, {get_self(), "active"_n});
+      // add_vote_act.send(get_self(), owner, quantity);
 
       //vote 
-      amaxapplybps::vote_action vote_act(_gstate.sys_contract, {get_self(), "active"_n});
-      vote_act.send(get_self(), voter_account, {owner});
+      amax_system::vote_action vote_act(_gstate.sys_contract, {get_self(), "active"_n});
+      //TODO
+      // vote_act.send(get_self(), voter_account, {owner});
 
    }
    
