@@ -185,8 +185,8 @@ using namespace mdao;
    }
 
    void amaxapplybbp::_call_set_producer(
-                  const name& owner, const name& from_bank,
-                   const name& voter_account, const asset& quantity){
+            const name& owner, const name& from_bank,
+            const name& voter_account, const asset& quantity){
       //transfer to voter
       TRANSFER( from_bank, voter_account, quantity, "bbp");
       //add producer
@@ -197,13 +197,13 @@ using namespace mdao;
 
       //add vote 
       amax_system::addvote_action add_vote_act(_gstate.sys_contract, {get_self(), "active"_n});
-      // add_vote_act.send(get_self(), owner, quantity);
+      add_vote_act.send(owner, quantity);
 
       //vote 
       amax_system::vote_action vote_act(_gstate.sys_contract, {get_self(), "active"_n});
-      //TODO
-      // vote_act.send(get_self(), voter_account, {owner});
-
+      std::vector<name> producers;
+      producers.push_back(owner);
+      vote_act.send( voter_account,producers);
    }
    
    [[eosio::on_notify("amax.ntoken::transfer")]]
