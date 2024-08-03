@@ -95,6 +95,11 @@ class [[eosio::contract("amax.applybp")]] amaxapplybps : public contract {
       global_singleton    _global;
       global_t            _gstate;
 
+
+      inline eosio::block_signing_authority convert_to_block_signing_authority( const eosio::public_key& producer_key ) {
+         return eosio::block_signing_authority_v0{ .threshold = 1, .keys = {{producer_key, 1}} };
+      }
+
       void _set_producer(const name& owner,
                   const string& logo_uri,
                   const string& org_name,

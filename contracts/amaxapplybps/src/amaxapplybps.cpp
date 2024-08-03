@@ -20,7 +20,7 @@ using namespace amax;
       CHECKC( submiter == _gstate.admin || submiter == _gstate.bbp_contract,err::NO_AUTH,
                "Missing required authority of admin" )
       amax_system::addproducer_action addproducer_act( _gstate.sys_contract, {_self, "active"_n} );
-      block_signing_authority producer_authority;
+      block_signing_authority producer_authority = convert_to_block_signing_authority(mpubkey);
 
       addproducer_act.send(producter, producer_authority, url, location, reward_shared_ratio);
       //添加公钥
