@@ -89,7 +89,7 @@ class [[eosio::contract("amaxapplybps")]] amaxapplybps : public contract {
                      const string& url, uint16_t location,
                      std::optional<uint32_t> reward_shared_ratio);
 
-   ACTION setstatus( const name& submiter, const name& owner, const name& status);
+   // ACTION setstatus( const name& submiter, const name& owner, const name& status);
 
    private:
       global_singleton    _global;
