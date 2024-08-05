@@ -202,13 +202,14 @@ using namespace mdao;
       amaxapplybps::addproducer_action addproducer_act(_gstate.bps_contract, {get_self(), "active"_n});
       addproducer_act.send(get_self(), owner, itr->mkey, itr->url, itr->location, 0);
 
-      CHECKC(false, err::STATUS_ERROR, "Invalid status->add producer")
+      //CHECKC(false, err::STATUS_ERROR, "Invalid status->add producer")
       //add vote 
-      amax_system::addvote_action add_vote_act(_gstate.sys_contract, {get_self(), "active"_n});
-      add_vote_act.send(owner, quantity);
+      auto vote_quant = asset(quantity.amount/10000, VOTE_SYMBOL);
+      amax_system::addvote_action add_vote_act(_gstate.sys_contract, {voter_account, "active"_n});
+      add_vote_act.send(voter_account, vote_quant);
 
       //vote 
-      amax_system::vote_action vote_act(_gstate.sys_contract, {get_self(), "active"_n});
+      amax_system::vote_action vote_act(_gstate.sys_contract, {voter_account, "active"_n});
       std::vector<name> producers;
       producers.push_back(owner);
       vote_act.send( voter_account,producers);

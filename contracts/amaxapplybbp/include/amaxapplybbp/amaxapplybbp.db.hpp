@@ -28,6 +28,7 @@ using namespace eosio;
 
 static constexpr name      SYS_BANK                 = "amax.token"_n;
 static constexpr symbol    AMAX_SYMBOL              = symbol(symbol_code("AMAX"), 8);
+static constexpr symbol    VOTE_SYMBOL              = symbol(symbol_code("VOTE"), 4);
 
 static constexpr uint32_t MAX_LOGO_SIZE             = 512;
 static constexpr uint32_t MAX_TITLE_SIZE            = 2048;
