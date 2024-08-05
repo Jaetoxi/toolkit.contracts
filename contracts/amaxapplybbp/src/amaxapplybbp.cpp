@@ -98,7 +98,7 @@ using namespace mdao;
       if(prod_itr ==_bbp_t.end()){
          //update plan
          db::set(_plan_t, plan_itr, _self, [&]( auto& p, bool is_new ) {
-            p.applied_bbps_count++;
+            p.required_bbp_quota =  plan_itr->required_bbp_quota + 1;
          });
       }
 
@@ -197,7 +197,7 @@ using namespace mdao;
       _call_set_producer(from, from_bank, voter_itr->voter_account, quantity);
 
       db::set(_plan_t, plan_itr, _self, [&]( auto& p, bool is_new ) {
-         p.applied_bbps_count = plan_itr->applied_bbps_count + 1;
+         p.finish_bbp_quota = plan_itr->finish_bbp_quota + 1;
       });
    }
 
