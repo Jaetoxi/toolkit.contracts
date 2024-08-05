@@ -147,11 +147,9 @@ using namespace mdao;
       //check project symbol required
       auto plan_itr = _plan_t.find(prod_itr->plan_id);
       CHECKC( plan_itr != _plan_t.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
-      if( plan_itr->quants.find(symb) == plan_itr->quants.end() ){
-         CHECKC( false, err::SYMBOL_MISMATCH, "Invalid symbol" )
-      }
+      CHECKC( plan_itr->quants.find(symb) != plan_itr->quants.end(), err::SYMBOL_MISMATCH, "Invalid symbol" );
       auto plan_quants = plan_itr->quants;
-      CHECKC(plan_quants.count(symb) > 0 , err::RECORD_NOT_FOUND, "plan not found symbol: ")
+      CHECKC(plan_quants.count(symb) > 0, err::RECORD_NOT_FOUND, "plan not found symbol: ")
       auto quants = prod_itr->quants;
 
       if(quants.count(symb) == 0){ 
@@ -161,7 +159,8 @@ using namespace mdao;
       }
 
       auto check_ret = _check_request_quant(plan_itr->quants, quants);
-      if( check_ret == CHECK_UNFINISHED) {
+      auto nft_check_ret =  _check_request_nft(plan_itr->nfts, prod_itr->nfts);
+      if( check_ret == CHECK_UNFINISHED || nft_check_ret == CHECK_UNFINISHED ) {
          db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
             p.quants = quants;
             p.nfts = prod_itr->nfts;
@@ -174,7 +173,7 @@ using namespace mdao;
       db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
          p.quants = quants;
          // p.nfts = prod_itr->nfts;
-         if(check_ret == CHECK_FINISHED){
+         if(check_ret == CHECK_FINISHED && nft_check_ret == CHECK_FINISHED){
             p.status = ProducerStatus::FINISHED;
          } else {
             p.status = ProducerStatus::REFUNDING;

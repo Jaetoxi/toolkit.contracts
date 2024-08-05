@@ -231,7 +231,7 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
             if(quants.at(symb) < quant) {
                return CHECK_UNFINISHED;  
             }
-            
+
             if(quants.at(symb) > quant) {
                ret = CHECK_NEED_REFUND;  
             }
@@ -239,18 +239,24 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
          return ret;
       }
 
-      bool _check_request_nft(
+      int _check_request_nft(
                      const std::map<extended_nsymbol, nasset>&       plan_nfts,
                      const std::map<extended_nsymbol, nasset>&       nfts) {
-            for(auto& [symb, nft] : plan_nfts) {
-               if(nfts.find(symb) == nfts.end()) {
-                  return false;
-               }
-               if(nfts.at(symb) < nft) {
-                  return false;  
-               }
+         auto ret = CHECK_FINISHED;
+      
+         for(auto& [symb, nft] : plan_nfts) {
+            if(nfts.count(symb) == 0) {
+               return CHECK_UNFINISHED;
             }
-            return true;
+            if(nfts.at(symb) < nft) {
+               return CHECK_UNFINISHED;  
+            }
+
+            if(nfts.at(symb) > nft) {
+               ret = CHECK_NEED_REFUND;  
+            }
+         }
+         return true;
       };
 
       void _call_set_producer(
