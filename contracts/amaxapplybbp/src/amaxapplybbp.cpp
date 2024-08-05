@@ -95,6 +95,14 @@ using namespace mdao;
          CHECKC( false, err::STATUS_ERROR, "Information cant been changed")
       } 
 
+      if(prod_itr ==_bbp_t.end()){
+         //update plan
+         db::set(_plan_t, plan_itr, _self, [&]( auto& p, bool is_new ) {
+            p.applied_bbps_count++;
+         });
+      }
+
+
       db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
          if (is_new) {
             p.owner        = owner;
@@ -187,6 +195,10 @@ using namespace mdao;
 
       //todo: transfer to owner
       _call_set_producer(from, from_bank, voter_itr->voter_account, quantity);
+
+      db::set(_plan_t, plan_itr, _self, [&]( auto& p, bool is_new ) {
+         p.applied_bbps_count = plan_itr->applied_bbps_count + 1;
+      });
    }
 
    void amaxapplybbp::_call_set_producer(
