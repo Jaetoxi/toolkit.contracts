@@ -28,16 +28,17 @@ static constexpr uint32_t MAX_TITLE_SIZE        = 2048;
 #define TBL struct [[eosio::table, eosio::contract("amaxapplybps")]]
 #define NTBL(name) struct [[eosio::table(name), eosio::contract("amaxapplybps")]]
 
-NTBL("global2") global_t {
+NTBL("global") global_t {
     name                admin;   
     name                bbp_contract;
     name                sys_contract = name("amax");
-
+    uint32_t            total_bbps_count;
+    uint32_t            applied_bbps_count;
     
     EOSLIB_SERIALIZE( global_t, (admin)(bbp_contract)(sys_contract)(total_bbps_count)(applied_bbps_count))
 
 };
 
-typedef eosio::singleton< "global2"_n, global_t > global_singleton;
+typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
 } //namespace amax

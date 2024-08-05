@@ -95,10 +95,8 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
                   const string&     logo_uri,
                   const string&     org_name,
                   const string&     org_info,
-                  const name&       dao_code,
-                  const string&     reward_shared_plan,
+                  const string&     mail,
                   const string&     manifesto,
-                  const string&     issuance_plan, 
                   const string&     url,
                   const uint32_t&   location,
                   const std::optional<eosio::public_key> pub_mkey);
@@ -263,17 +261,16 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
                   const name& owner, const name& from_bank,
                    const name& voter_account, const asset& quantity);
 
-      void _set_producer(const name& owner,
-                              const uint32_t& plan_id,
-                              const string& logo_uri,
-                              const string& org_name,
-                              const string& org_info,
-                              const name& dao_code,
-                              const string& reward_shared_plan,
-                              const string& manifesto,
-                              const string& issuance_plan, 
-                              const string& url,
-                              const uint32_t& location,
-                              const std::optional<eosio::public_key> pub_mkey);
+      void _set_producer( 
+                  const name&      owner,
+                  const uint32_t&   plan_id,
+                  const string&     logo_uri,
+                  const string&     org_name,
+                  const string&     org_info,
+                  const string&     email,
+                  const string&     manifesto,
+                  const string&     url,
+                  const uint32_t&   location,
+                  const std::optional<eosio::public_key> pub_mkey);
 };
 } //namespace amax

@@ -78,7 +78,7 @@ TBL voter_t {
     EOSLIB_SERIALIZE(voter_t, (id)(voter_account)(bbp_account)(created_at)(updated_at))
 };
 
-typedef eosio::multi_index< "voterlist"_n, voter_t > voters;
+typedef eosio::multi_index< "voters"_n, voter_t > voters;
 inline static voters make_voter_table( const name& self ) { return voters(self, self.value); }
 
 
@@ -90,8 +90,7 @@ TBL bbp_t {
     string                          org_info;                   // web:xxx|tw:xxx|tg:xxX
     name                            dao_code;   
     string                          manifesto;                  // cn:xxx|en:xxx
-    string                          issuance_plan;              // cn:xxx|en:xxx
-    string                          reward_shared_plan;         // cn:xxx|en:xxx
+    string                          email;
     string                          url;
     uint64_t                        location;
     name                            status;
@@ -108,8 +107,7 @@ TBL bbp_t {
     typedef eosio::multi_index< "bbps"_n,  bbp_t > idx_t;
 
     EOSLIB_SERIALIZE(bbp_t, (owner)(plan_id)(logo_uri)(org_name)(org_info)(dao_code)
-                            (manifesto)(issuance_plan)(reward_shared_plan)
-                            (url)(location)(status)
+                            (manifesto)(email)(url)(location)(status)
                             (created_at)(updated_at)(quants)(nfts)(mkey))
 };
 

@@ -40,20 +40,19 @@ using namespace mdao;
 
 
 
-   void amaxapplybbp::applybbp( const name& owner,
-                              const uint32_t& plan_id,
-                              const string& logo_uri,
-                              const string& org_name,
-                              const string& org_info,
-                              const name& dao_code,
-                              const string& reward_shared_plan,
-                              const string& manifesto,
-                              const string& issuance_plan, 
-                              const string& url,
-                              const uint32_t& location,
-                              const std::optional<eosio::public_key> pub_mkey){
+   void amaxapplybbp::applybbp(
+                  const name&      owner,
+                  const uint32_t&   plan_id,
+                  const string&     logo_uri,
+                  const string&     org_name,
+                  const string&     org_info,
+                  const string&     email,
+                  const string&     manifesto,
+                  const string&     url,
+                  const uint32_t&   location,
+                  const std::optional<eosio::public_key> pub_mkey){
       require_auth( owner );
-      // _set_producer(owner, plan_id, logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan, url, location, pub_mkey);
+      _set_producer(owner, plan_id, logo_uri, org_name, org_info, email, manifesto, url, location, pub_mkey);
    }
 
    // void amaxapplybbp::updatebbp(const name& owner,
@@ -73,26 +72,23 @@ using namespace mdao;
    //    _set_producer(owner,logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan);
    // }
 
-   void amaxapplybbp::_set_producer(const name& owner,
-                              const uint32_t& plan_id,
-                              const string& logo_uri,
-                              const string& org_name,
-                              const string& org_info,
-                              const name& dao_code,
-                              const string& reward_shared_plan,
-                              const string& manifesto,
-                              const string& issuance_plan, 
-                              const string& url,
-                              const uint32_t& location,
-                              const std::optional<eosio::public_key> pub_mkey){
+   void amaxapplybbp::_set_producer(
+                  const name&      owner,
+                  const uint32_t&   plan_id,
+                  const string&     logo_uri,
+                  const string&     org_name,
+                  const string&     org_info,
+                  const string&     email,
+                  const string&     manifesto,
+                  const string&     url,
+                  const uint32_t&   location,
+                  const std::optional<eosio::public_key> pub_mkey){
       auto plan_itr = _plan_t.find(plan_id);
       CHECKC( plan_itr != _plan_t.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
 
       CHECKC( logo_uri.size() <= MAX_LOGO_SIZE ,err::OVERSIZED ,"logo size must be <= " + to_string(MAX_LOGO_SIZE))
       CHECKC( org_name.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_name size must be <= " + to_string(MAX_TITLE_SIZE))
       CHECKC( org_info.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_info size must be <= " + to_string(MAX_TITLE_SIZE))
-      CHECKC( issuance_plan.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"issuance_plan size must be <= " + to_string(MAX_TITLE_SIZE))
-      CHECKC( reward_shared_plan.size() <= MAX_TITLE_SIZE, err::OVERSIZED, "reward_shared_ratio is too large than 10000");
 
       auto prod_itr = _bbp_t.find(owner.value);
       if(prod_itr !=  _bbp_t.end() && (prod_itr->status != ProducerStatus::INIT)){
@@ -109,10 +105,10 @@ using namespace mdao;
          p.logo_uri              = logo_uri;
          p.org_name              = org_name;
          p.org_info              = org_info;
-         p.dao_code              = dao_code;
-         p.reward_shared_plan    = reward_shared_plan;
          p.manifesto             = manifesto;
-         p.issuance_plan         = issuance_plan;
+         p.email                 = email;
+         p.url                   = url;
+         p.location              = location;
          p.updated_at            = current_time_point();
          if(pub_mkey.has_value()) 
             p.mkey               = pub_mkey.value();

@@ -1,18 +1,18 @@
-con_bbp=bbp1
+con_bbp=bbp2
 tnew $con_bbp
 tset $con_bbp amaxapplybbp
 
-con_bps=bps1
+con_bps=bps2
 tnew $con_bps
 tset $con_bps amaxapplybps
 
-tpush $con_bbp
 
 
-
-tnew bbpadmin
+# tnew bbpadmin
 tpush $con_bbp init '["bbpadmin","AM7n5TBaSnZLkrn8yYk54YveYoyQujJaMGK546gPze1Vy5MsM3S6","'$con_bps'"]' -p $con_bbp
 tpush $con_bps init '["bbpadmin","'$con_bbp'"]' -p $con_bps
+tcli get table $con_bps $con_bps "global"
+
 
 bbp_owner1=bbp.owner1
 tnew $bbp_owner1
