@@ -194,12 +194,15 @@ using namespace mdao;
             const name& voter_account, const asset& quantity){
       //transfer to voter
       TRANSFER( from_bank, voter_account, quantity, "bbp");
+
+
       //add producer
       auto itr = _bbp_t.find(owner.value);
-      CHECKC( itr ==  _bbp_t.end(),err::RECORD_NOT_FOUND ,"bbp not found:" + owner.to_string())
+      CHECKC( itr !=  _bbp_t.end(),err::RECORD_NOT_FOUND ,"bbp not found:" + owner.to_string())
       amaxapplybps::addproducer_action addproducer_act(_gstate.bps_contract, {get_self(), "active"_n});
       addproducer_act.send(get_self(), owner, itr->mkey, itr->url, itr->location, 0);
 
+      CHECKC(false, err::STATUS_ERROR, "Invalid status->add producer")
       //add vote 
       amax_system::addvote_action add_vote_act(_gstate.sys_contract, {get_self(), "active"_n});
       add_vote_act.send(owner, quantity);

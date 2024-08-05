@@ -26,16 +26,16 @@ using namespace eosio;
 #define TBL struct [[eosio::table, eosio::contract("amaxapplybbp")]]
 #define NTBL(name) struct [[eosio::table(name), eosio::contract("amaxapplybbp")]]
 
-static constexpr name      SYS_BANK         = "amax.token"_n;
-static constexpr symbol    AMAX_SYMBOL      = symbol(symbol_code("AMAX"), 8);
+static constexpr name      SYS_BANK                 = "amax.token"_n;
+static constexpr symbol    AMAX_SYMBOL              = symbol(symbol_code("AMAX"), 8);
 
-static constexpr uint32_t MAX_LOGO_SIZE        = 512;
-static constexpr uint32_t MAX_TITLE_SIZE        = 2048;
+static constexpr uint32_t MAX_LOGO_SIZE             = 512;
+static constexpr uint32_t MAX_TITLE_SIZE            = 2048;
 
 
-static constexpr uint32_t CHECK_UNFINISHED      = 0;
-static constexpr uint32_t CHECK_NEED_REFUND     = 1;
-static constexpr uint32_t CHECK_FINISHED        = 2;
+static constexpr uint32_t CHECK_UNFINISHED          = 0;
+static constexpr uint32_t CHECK_NEED_REFUND         = 1;
+static constexpr uint32_t CHECK_FINISHED            = 2;
 
 namespace ProducerStatus {
     static constexpr eosio::name INIT           { "init"_n   };
@@ -70,7 +70,7 @@ TBL voter_t {
     uint64_t  by_voter_account() const { return voter_account.value; }
     uint64_t  by_bbp_account() const { return bbp_account.value; }
     
-    typedef eosio::multi_index<"voterlist"_n, voter_t,
+    typedef eosio::multi_index<"voters"_n, voter_t,
         indexed_by<"voteridx"_n, const_mem_fun<voter_t, uint64_t, &voter_t::by_voter_account> >,
         indexed_by<"bbpidx"_n, const_mem_fun<voter_t, uint64_t, &voter_t::by_bbp_account> >
     > idx_t;
@@ -113,7 +113,8 @@ TBL bbp_t {
 
 TBL plan_t {
     uint64_t                        id;                 //PK
-    uint64_t                        bbp_quota;
+    uint64_t                        total_bbp_quota;
+    uint64_t                        required_bbp_quota;
     uint64_t                        finish_bbp_account;
     map<extended_symbol, asset>     quants;
     map<extended_nsymbol, nasset>   nfts;
@@ -132,7 +133,7 @@ TBL plan_t {
     typedef eosio::multi_index< "plans"_n,  plan_t > idx_t;
 
 
-    EOSLIB_SERIALIZE(plan_t, (id)(bbp_quota)(finish_bbp_account)(quants)(nfts)(created_at)(updated_at))
+    EOSLIB_SERIALIZE(plan_t, (id)(total_bbp_quota)(required_bbp_quota)(finish_bbp_account)(quants)(nfts)(created_at)(updated_at))
 
 };
 

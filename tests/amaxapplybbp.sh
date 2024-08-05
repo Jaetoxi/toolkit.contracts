@@ -1,11 +1,10 @@
-con_bbp=bbp2
+con_bbp=bbp3
 tnew $con_bbp
 tset $con_bbp amaxapplybbp
 
-con_bps=bps2
+con_bps=amaxapplybps
 tnew $con_bps
 tset $con_bps amaxapplybps
-
 
 
 # tnew bbpadmin
@@ -17,23 +16,30 @@ tcli get table $con_bps $con_bps "global"
 bbp_owner1=bbp.owner1
 tnew $bbp_owner1
 
-plan_id=1;
-bbp_quota=240
+plan_id=1
+bbp_quota=24
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",[[["8,AMAX", "amax.token"], "1.20000000 AMAX"]], []]' -p $con_bbp
 
-tpush $con_bbp setplan1 '["'$plan_id'","'$bbp_quota'" ]' -p $con_bbp
-tcli get table $con_bbp $con_bbp "plans"
 
-tnew bbpvote1
-tnew bbpvote2
-tnew bbpvote3
+tcli get table amax.ntoken ad "accounts"
+plan_id=2
+bbp_quota=3
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'", [[["8,AMAX","amax.token"],"1.00000000 AMAX"]],[[[[1,0],"amax.ntoken"],[1,[1,0]]]]]' -p $con_bbp
+plan_id=3
+bbp_quota=3
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",[[["8,AMAX", "amax.token"], "10.00000000 AMAX"]], []' -p $con_bbp
 
-tpush $con_bbp addvoters '{"voters":["bbpvote2","bbpvote2","bbpvote3"] }' -p $con_bbp
+tnew bbpvote11
+tnew bbpvote21
+tnew bbpvote31
+
+tpush $con_bbp addvoters '{"voters":["bbpvote11","bbpvote21","bbpvote31"] }' -p $con_bbp
 tcli get table $con_bbp $con_bbp "voterlist"
 
 
 tcli get table $con_bbp $con_bbp "global"
 
-tpush $con_bbp applybbp '["'$bbp_owner1'",1,"logo_uri","org_name", "org_info","daocode1","reward_shared_plan","manifesto","issuance_plan","url",1232, null]' -p $bbp_owner1
+tpush $con_bbp applybbp '["'$bbp_owner1'",1,"logo_uri","org_name", "org_info","mail","manifesto","url",1232, null]' -p $bbp_owner1
 tcli get table $con_bbp $con_bbp "bbps"
 
 tcli push action amax.token  transfer '["amax", "'$bbp_owner1'", "10.00000000 AMAX", ""]' -p amax
@@ -43,4 +49,9 @@ tcli push action amax.token  transfer '["'$bbp_owner1'", "'$con_bbp'", "1.000010
 tcli get table $con_bbp $con_bbp "bbps"
 
 tcli push action  $con_bbp tsetvoteridx '[18]' -p $con_bbp
+
+
+voter=bbpvote2
+tpush amax updateauth '{"account":"'$voter'","permission":"active","parent":"owner","auth":{"threshold":1,"keys":[],"waits":[],"accounts":[{"weight":1,"permission":{"actor":"'$con_bbp'","permission":"active"}}]}}' -p $voter
+
 

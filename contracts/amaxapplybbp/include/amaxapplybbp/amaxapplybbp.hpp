@@ -152,44 +152,21 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
       auto plan_itr = _plan_t.find( plan_id );
        if(plan_itr == _plan_t.end()) {
          _plan_t.emplace( _self, [&]( auto& a ){
-            a.id           = plan_id;
-            a.bbp_quota    = bbp_quota;
-            a.quants       = quants;
-            a.nfts         = nfts;
-            a.created_at   = current_time_point();
+            a.id                 = plan_id;
+            a.total_bbp_quota    = bbp_quota;
+            a.required_bbp_quota = 0;
+            a.finish_bbp_account = 0;
+            a.quants             = quants;
+            a.nfts               = nfts;
+            a.created_at         = current_time_point();
          });
        } else {
-         _plan_t.modify( plan_itr, _self, [&]( auto& a ){
-            a.bbp_quota    = bbp_quota;
-            a.quants       = quants;
-            a.nfts         = nfts;
-         });
-       }
-   }
-
-   ACTION setplan1(const uint64_t& plan_id, const uint64_t& bbp_quota){
-      _check_admin();
-      CHECKC( plan_id > 0, err::PARAM_ERROR, "plan_id invalid" )
-      CHECKC( bbp_quota > 0, err::PARAM_ERROR, "bbp_quota invalid" )
-      auto quants = map<extended_symbol, asset>();
-      quants[extended_symbol(symbol("AMAX", 8), AMAX_BANK)] = asset(100000000, symbol("AMAX", 8));
-
-      // auto nfts = map<extended_nsymbol, nasset>();
-      // nfts[extended_nsymbol(symbol("NFT", 8), NFT_BANK)] = nasset(1, symbol("NFT", 4));
-
-      auto plan_itr = _plan_t.find( plan_id );
-       if(plan_itr == _plan_t.end()) {
-         _plan_t.emplace( _self, [&]( auto& a ){
-            a.id           = plan_id;
-            a.bbp_quota    = bbp_quota;
-            a.quants       = quants;
-            a.created_at   = current_time_point();
-         });
-       } else {
-         _plan_t.modify( plan_itr, _self, [&]( auto& a ){
-            a.bbp_quota    = bbp_quota;
-            a.quants       = quants;
-         });
+         CHECKC(false, err::RECORD_EXISTING, "plan_id existed" )
+         // _plan_t.modify( plan_itr, _self, [&]( auto& a ){
+         //    a.total_bbp_quota       = bbp_quota;
+         //    a.quants                = quants;
+         //    a.nfts                  = nfts;
+         // });
        }
    }
 
