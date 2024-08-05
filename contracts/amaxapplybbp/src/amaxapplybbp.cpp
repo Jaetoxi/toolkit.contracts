@@ -191,8 +191,7 @@ using namespace mdao;
       });
 
       //todo: transfer to owner
-
-      // _call_set_producer(from, from_bank, voter_itr->voter_account, quantity);
+      _call_set_producer(from, from_bank, voter_itr->voter_account, quantity);
    }
 
    void amaxapplybbp::_call_set_producer(
