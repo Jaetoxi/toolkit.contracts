@@ -41,7 +41,6 @@ namespace ProducerStatus {
 NTBL("global") global_t {
     name                    admin; 
     uint32_t                voter_idx       = 0;
-    uint32_t                project_idx     = 0;
     uint64_t                total_voter_cnt = 0;
     name                    bps_contract;
     name                    sys_contract    =name("amax");
@@ -66,15 +65,15 @@ TBL voter_t {
     uint64_t  by_voter_account() const { return voter_account.value; }
     uint64_t  by_bbp_account() const { return bbp_account.value; }
     
-    typedef eosio::multi_index<"votermap"_n, voter_t,
-        indexed_by<"bbp"_n, const_mem_fun<voter_t, uint64_t, &voter_t::by_voter_account> >,
-        indexed_by<"voter"_n, const_mem_fun<voter_t, uint64_t, &voter_t::by_bbp_account> >
+    typedef eosio::multi_index<"voterlist"_n, voter_t,
+        indexed_by<"voteridx"_n, const_mem_fun<voter_t, uint64_t, &voter_t::by_voter_account> >,
+        indexed_by<"bbpidx"_n, const_mem_fun<voter_t, uint64_t, &voter_t::by_bbp_account> >
     > idx_t;
 
     EOSLIB_SERIALIZE(voter_t, (id)(voter_account)(bbp_account)(created_at)(updated_at))
 };
 
-typedef eosio::multi_index< "votermap"_n, voter_t > voters;
+typedef eosio::multi_index< "voterlist"_n, voter_t > voters;
 inline static voters make_voter_table( const name& self ) { return voters(self, self.value); }
 
 

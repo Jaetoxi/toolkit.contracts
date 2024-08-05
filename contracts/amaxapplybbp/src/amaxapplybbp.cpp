@@ -53,7 +53,7 @@ using namespace mdao;
                               const uint32_t& location,
                               const std::optional<eosio::public_key> pub_mkey){
       require_auth( owner );
-      _set_producer(owner, plan_id, logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan, url, location, pub_mkey);
+      // _set_producer(owner, plan_id, logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan, url, location, pub_mkey);
    }
 
    // void amaxapplybbp::updatebbp(const name& owner,
@@ -85,6 +85,9 @@ using namespace mdao;
                               const string& url,
                               const uint32_t& location,
                               const std::optional<eosio::public_key> pub_mkey){
+      auto plan_itr = _plan_t.find(plan_id);
+      CHECKC( plan_itr != _plan_t.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
+
       CHECKC( logo_uri.size() <= MAX_LOGO_SIZE ,err::OVERSIZED ,"logo size must be <= " + to_string(MAX_LOGO_SIZE))
       CHECKC( org_name.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_name size must be <= " + to_string(MAX_TITLE_SIZE))
       CHECKC( org_info.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_info size must be <= " + to_string(MAX_TITLE_SIZE))
@@ -98,7 +101,7 @@ using namespace mdao;
 
       db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
          if (is_new) {
-            p.owner        =  owner;
+            p.owner        = owner;
             p.created_at   = current_time_point();
             p.status       = ProducerStatus::INIT;
          }
@@ -130,12 +133,12 @@ using namespace mdao;
 
       if (from == get_self()) { return; }
       if( to != _self ) return;
-      if( get_first_receiver() != MT_BANK ) return;
+      CHECKC(get_first_receiver() == AMAX_BANK, err::STATUS_ERROR, "Invalid bank:" + get_first_receiver().to_string()) 
       auto prod_itr = _bbp_t.find(from.value);
    
       CHECKC( prod_itr != _bbp_t.end(), err::STATUS_ERROR, "Information cant been changed")
       //进行中
-      CHECKC( prod_itr->status != ProducerStatus::INIT, err::STATUS_ERROR, "Information cant been changed")
+      CHECKC( prod_itr->status == ProducerStatus::INIT, err::STATUS_ERROR, "Information cant been changed")
       CHECKC( quantity.symbol == AMAX_SYMBOL, err::SYMBOL_MISMATCH, "Invalid symbol" )
 
       auto from_bank = get_first_receiver();

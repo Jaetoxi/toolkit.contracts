@@ -90,18 +90,18 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
       _gstate.bps_contract   = bps_contract;
    }
 
-   ACTION applybbp(const name& owner,
-                              const uint32_t& plan_id,
-                              const string& logo_uri,
-                              const string& org_name,
-                              const string& org_info,
-                              const name& dao_code,
-                              const string& reward_shared_plan,
-                              const string& manifesto,
-                              const string& issuance_plan, 
-                              const string& url,
-                              const uint32_t& location,
-                              const std::optional<eosio::public_key> pub_mkey);
+   ACTION applybbp(const name&      owner,
+                  const uint32_t&   plan_id,
+                  const string&     logo_uri,
+                  const string&     org_name,
+                  const string&     org_info,
+                  const name&       dao_code,
+                  const string&     reward_shared_plan,
+                  const string&     manifesto,
+                  const string&     issuance_plan, 
+                  const string&     url,
+                  const uint32_t&   location,
+                  const std::optional<eosio::public_key> pub_mkey);
 
    ACTION updatebbp(const name& owner, const uint64_t plan_id, const string& logo_uri, const string& org_name,
                   const string& org_info, const name& dao_code, const string& manifesto,
@@ -110,7 +110,7 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
                      const uint32_t& location,
                      const std::optional<eosio::public_key> pub_mkey ){
 
-   }              
+   } 
 
    [[eosio::on_notify("amax.mtoken::transfer")]]
    void onrecv_mtoken( name from, name to, asset quantity, string memo );
@@ -124,12 +124,13 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
    ACTION addvoters(const std::vector<name> &voters){
       _check_admin();
       CHECKC( voters.size() > 0 && voters.size() <= 50, err::OVERSIZED, "accounts oversized: " + std::to_string( voters.size()) )
-      auto voter_accts = make_voter_table( _self);
-      
+      voter_t::idx_t voter_accts( _self, _self.value );
+      auto voter_idx   = voter_accts.get_index<"voteridx"_n>();
+      auto addcount = 0;
       for (auto& target : voters) {
          CHECKC(is_account(target), err::ACCOUNT_INVALID, "account not existed: " + target.to_string() );
-         auto itr = voter_accts.find( target.value );
-         if (itr != voter_accts.end()) {
+         auto itr = voter_idx.find( target.value );
+         if (itr != voter_idx.end()) {
             continue;   //found and skip
          }
          _gstate.total_voter_cnt++;
@@ -138,7 +139,9 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
             a.voter_account   = target;
             a.created_at      = current_time_point();
          });
+         addcount++;
       }
+      CHECKC( addcount > 0, err::ACTION_REDUNDANT, "no new voter added" )
    }
 
    ACTION setplan(const uint64_t& plan_id, const uint64_t& bbp_quota, 
@@ -161,7 +164,33 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
          _plan_t.modify( plan_itr, _self, [&]( auto& a ){
             a.bbp_quota    = bbp_quota;
             a.quants       = quants;
-            a.nfts          = nfts;
+            a.nfts         = nfts;
+         });
+       }
+   }
+
+   ACTION setplan1(const uint64_t& plan_id, const uint64_t& bbp_quota){
+      _check_admin();
+      CHECKC( plan_id > 0, err::PARAM_ERROR, "plan_id invalid" )
+      CHECKC( bbp_quota > 0, err::PARAM_ERROR, "bbp_quota invalid" )
+      auto quants = map<extended_symbol, asset>();
+      quants[extended_symbol(symbol("AMAX", 8), AMAX_BANK)] = asset(100000000, symbol("AMAX", 8));
+
+      // auto nfts = map<extended_nsymbol, nasset>();
+      // nfts[extended_nsymbol(symbol("NFT", 8), NFT_BANK)] = nasset(1, symbol("NFT", 4));
+
+      auto plan_itr = _plan_t.find( plan_id );
+       if(plan_itr == _plan_t.end()) {
+         _plan_t.emplace( _self, [&]( auto& a ){
+            a.id           = plan_id;
+            a.bbp_quota    = bbp_quota;
+            a.quants       = quants;
+            a.created_at   = current_time_point();
+         });
+       } else {
+         _plan_t.modify( plan_itr, _self, [&]( auto& a ){
+            a.bbp_quota    = bbp_quota;
+            a.quants       = quants;
          });
        }
    }
