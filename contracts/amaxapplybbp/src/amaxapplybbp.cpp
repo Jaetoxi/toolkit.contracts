@@ -135,8 +135,7 @@ using namespace mdao;
       if( to != _self ) return;
       CHECKC(get_first_receiver() == AMAX_BANK, err::STATUS_ERROR, "Invalid bank:" + get_first_receiver().to_string()) 
       auto prod_itr = _bbp_t.find(from.value);
-   
-      CHECKC( prod_itr != _bbp_t.end(), err::STATUS_ERROR, "Information cant been changed")
+      CHECKC( prod_itr != _bbp_t.end(), err::STATUS_ERROR, "bbp not found:" + from.to_string())
       //进行中
       CHECKC( prod_itr->status == ProducerStatus::INIT, err::STATUS_ERROR, "Information cant been changed")
       CHECKC( quantity.symbol == AMAX_SYMBOL, err::SYMBOL_MISMATCH, "Invalid symbol" )
@@ -152,25 +151,34 @@ using namespace mdao;
          CHECKC( false, err::SYMBOL_MISMATCH, "Invalid symbol" )
       }
       auto plan_quants = plan_itr->quants;
-      if(plan_quants.count(symb) == 0) {
-         plan_quants[symb] = quantity;
+      CHECKC(plan_quants.count(symb) > 0 , err::RECORD_NOT_FOUND, "plan not found symbol: ")
+      auto quants = prod_itr->quants;
+
+      if(quants.count(symb) == 0){ 
+         quants[symb] = quantity;
       } else {
-         plan_quants[symb] += quantity;
+         quants[symb] += quantity;
       }
-      if(!(_check_request_quant(plan_itr->quants, plan_quants) &&
-            _check_request_nft(plan_itr->nfts, prod_itr->nfts))) {
+
+      auto check_ret = _check_request_quant(plan_itr->quants, quants);
+      if( check_ret == CHECK_UNFINISHED) {
          db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
-            p.quants = prod_itr->quants;
+            p.quants = quants;
             p.nfts = prod_itr->nfts;
             p.updated_at = current_time_point();
          });
          return;
       }
+      
       //paid finished
       db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
-         p.quants = plan_quants;
+         p.quants = quants;
          // p.nfts = prod_itr->nfts;
-         p.status = ProducerStatus::REFUNDING;
+         if(check_ret == CHECK_FINISHED){
+            p.status = ProducerStatus::FINISHED;
+         } else {
+            p.status = ProducerStatus::REFUNDING;
+         }
          p.updated_at = current_time_point();
       });
       //allocate a partner
@@ -184,7 +192,7 @@ using namespace mdao;
 
       //todo: transfer to owner
 
-      _call_set_producer(from, from_bank, voter_itr->voter_account, quantity);
+      // _call_set_producer(from, from_bank, voter_itr->voter_account, quantity);
    }
 
    void amaxapplybbp::_call_set_producer(

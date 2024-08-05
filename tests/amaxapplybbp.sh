@@ -32,8 +32,11 @@ tcli get table $con_bbp $con_bbp "global"
 tpush $con_bbp applybbp '["'$bbp_owner1'",1,"logo_uri","org_name", "org_info","daocode1","reward_shared_plan","manifesto","issuance_plan","url",1232, null]' -p $bbp_owner1
 tcli get table $con_bbp $con_bbp "bbps"
 
-tcli push action amax.token  transfer '["amax", "'$coin_bbp'", "1.00000000 AMAX", ""]' -p $bbp_owner1
+tcli push action amax.token  transfer '["amax", "'$bbp_owner1'", "10.00000000 AMAX", ""]' -p amax
 
-tcli push action amax.token  transfer '["'$bbp_owner1'", "'$coin_bbp'", "1.00000000 AMAX", ""]' -p $bbp_owner1
+tcli push action amax.token  transfer '["'$bbp_owner1'", "'$con_bbp'", "1.00000000 AMAX", ""]' -p $bbp_owner1
 
+tcli get table $con_bbp $con_bbp "bbps"
+
+tcli push action  $con_bbp tsetvoteridx '[18]' -p $con_bbp
 

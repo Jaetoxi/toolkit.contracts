@@ -195,6 +195,11 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
        }
    }
 
+   ACTION tsetvoteridx(const uint64_t& voter_idx){
+      _check_admin();
+      _gstate.voter_idx = voter_idx;
+   }
+   
    ACTION rmvoters(const std::vector<name> &voters){
       _check_admin();
    }
@@ -215,18 +220,23 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
       plan_t::idx_t           _plan_t;
 
 
-      bool _check_request_quant(
+      int _check_request_quant(
                      const std::map<extended_symbol, asset>&       plan_quants,
                      const std::map<extended_symbol, asset>&       quants) {
+         auto ret = CHECK_FINISHED;
          for(auto& [symb, quant] : plan_quants) {
-            if(quants.find(symb) == quants.end()) {
-               return false;
+            if(quants.count(symb) == 0) {
+               return CHECK_UNFINISHED;
             }
             if(quants.at(symb) < quant) {
-               return false;  
+               return CHECK_UNFINISHED;  
+            }
+            
+            if(quants.at(symb) > quant) {
+               ret = CHECK_NEED_REFUND;  
             }
          }
-         return true;
+         return ret;
       }
 
       bool _check_request_nft(

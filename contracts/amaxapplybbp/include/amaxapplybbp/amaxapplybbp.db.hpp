@@ -32,6 +32,11 @@ static constexpr symbol    AMAX_SYMBOL      = symbol(symbol_code("AMAX"), 8);
 static constexpr uint32_t MAX_LOGO_SIZE        = 512;
 static constexpr uint32_t MAX_TITLE_SIZE        = 2048;
 
+
+static constexpr uint32_t CHECK_UNFINISHED      = 0;
+static constexpr uint32_t CHECK_NEED_REFUND     = 1;
+static constexpr uint32_t CHECK_FINISHED        = 2;
+
 namespace ProducerStatus {
     static constexpr eosio::name INIT           { "init"_n   };
     static constexpr eosio::name REFUNDING      { "refunding"_n   };
