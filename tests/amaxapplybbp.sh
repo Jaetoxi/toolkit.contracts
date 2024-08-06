@@ -1,4 +1,4 @@
-con_bbp=bbp3
+con_bbp=bbptest1
 tnew $con_bbp
 tset $con_bbp amaxapplybbp
 
@@ -10,6 +10,7 @@ tset $con_bps amaxapplybps
 # tnew bbpadmin
 tpush $con_bbp init '["bbpadmin","AM7n5TBaSnZLkrn8yYk54YveYoyQujJaMGK546gPze1Vy5MsM3S6","'$con_bps'"]' -p $con_bbp
 tpush $con_bps init '["bbpadmin","'$con_bbp'"]' -p $con_bps
+tcli get table $con_bbp $con_bbp "global"
 tcli get table $con_bps $con_bps "global"
 
 
@@ -18,16 +19,16 @@ tnew $bbp_owner1
 
 plan_id=1
 bbp_quota=24
-tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",[[["8,AMAX", "amax.token"], "1.20000000 AMAX"]], []]' -p $con_bbp
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",1,[[["8,AMAX", "amax.token"], "1.00000000 AMAX"]], []]' -p $con_bbp
 
 
 tcli get table amax.ntoken ad "accounts"
 plan_id=2
 bbp_quota=3
-tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'", [[["8,AMAX","amax.token"],"1.00000000 AMAX"]],[[[[1,0],"amax.ntoken"],[1,[1,0]]]]]' -p $con_bbp
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'", 1, [[["8,AMAX","amax.token"],"1.00000000 AMAX"]],[[[[1,0],"amax.ntoken"],[1,[1,0]]]]]' -p $con_bbp
 plan_id=3
 bbp_quota=3
-tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",[[["8,AMAX", "amax.token"], "10.00000000 AMAX"]], []' -p $con_bbp
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",1, [[["8,AMAX", "amax.token"], "1.00000000 AMAX"], [["6,MUSDT", "amax.mtoken"], "1.000000 MUSDT"]], []' -p $con_bbp
 
 tnew bbpvote11
 tnew bbpvote21

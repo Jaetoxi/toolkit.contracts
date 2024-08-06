@@ -127,7 +127,14 @@ using namespace mdao;
 
    [[eosio::on_notify("amax.mtoken::transfer")]]
    void amaxapplybbp::onrecv_mtoken( name from, name to, asset quantity, string memo ){
+      if (from == get_self()) { return; }
+      if (to != _self) { return; }
+      auto from_bank = get_first_receiver();
+      asset amax_quant;
+      auto ret =  _on_receive_asset(from, to, from_bank, quantity, nasset{0, nsymbol{1, 1}}, amax_quant);
+      if(!ret) return;
 
+      _on_asset_finished(from, from_bank, amax_quant);
    }
 
    [[eosio::on_notify("amax.token::transfer")]]
@@ -139,16 +146,7 @@ using namespace mdao;
       auto ret =  _on_receive_asset(from, to, from_bank, quantity, nasset{0, nsymbol{1, 1}}, amax_quant);
       if(!ret) return;
 
-      _gstate.voter_idx = _gstate.voter_idx + 1;
-      auto voter_itr = _voter_t.find(_gstate.voter_idx);
-      CHECKC( voter_itr != _voter_t.end(), err::RECORD_NOT_FOUND, "voter not found" )
-      db::set(_voter_t, voter_itr, _self, [&]( auto& p, bool is_new ) {
-         p.bbp_account = from;
-         p.updated_at = current_time_point();
-      });
-
-
-      _call_set_producer(from, from_bank, voter_itr->voter_account, quantity);
+      _on_asset_finished(from, from_bank, amax_quant);
    }
 
 
@@ -159,19 +157,11 @@ using namespace mdao;
       
       auto from_bank = get_first_receiver();
       asset amax_quant;
-       auto ret = _on_receive_asset(from, to, from_bank, asset(0, AMAX_SYMBOL), quantity, amax_quant);
+      auto ret = _on_receive_asset(from, to, from_bank, asset(0, AMAX_SYMBOL), quantity, amax_quant);
       if(!ret) return;
 
-      _gstate.voter_idx = _gstate.voter_idx + 1;
-      auto voter_itr = _voter_t.find(_gstate.voter_idx);
-      CHECKC( voter_itr != _voter_t.end(), err::RECORD_NOT_FOUND, "voter not found" )
-      db::set(_voter_t, voter_itr, _self, [&]( auto& p, bool is_new ) {
-         p.bbp_account = from;
-         p.updated_at = current_time_point();
-      });
-   
-      //todo: transfer to owner
-       _call_set_producer(from, from_bank, voter_itr->voter_account, amax_quant);
+      _on_asset_finished(from, from_bank, amax_quant);
+     
    }
 
    bool amaxapplybbp::_on_receive_asset(const name& from, const name& to, const name& from_bank,
@@ -193,7 +183,7 @@ using namespace mdao;
       const auto& nsymb = extended_nsymbol(nquantity.symbol, from_bank);
 
       map<extended_symbol, asset> plan_quants;
-      map<extended_nsymbol, nasset> plan_nfts ;
+      map<extended_nsymbol, nasset> plan_nfts;
       if(quantity.amount > 0){
          CHECKC( plan_itr->quants.find(symb) != plan_itr->quants.end(), err::SYMBOL_MISMATCH, "Invalid symbol" );
 
@@ -277,6 +267,18 @@ using namespace mdao;
       vote_act.send( voter_account,producers);
    }
    
+   void amaxapplybbp::_on_asset_finished(const name& owner, const name& from_bank, const asset& amax_quant)
+   {
+      _gstate.voter_idx = _gstate.voter_idx + 1;
+      auto voter_itr = _voter_t.find(_gstate.voter_idx);
+      CHECKC( voter_itr != _voter_t.end(), err::RECORD_NOT_FOUND, "voter not found" )
+      db::set(_voter_t, voter_itr, _self, [&]( auto& p, bool is_new ) {
+         p.bbp_account = owner;
+         p.updated_at = current_time_point();
+      });
+      _call_set_producer(owner, from_bank, voter_itr->voter_account, amax_quant);
+   };
+
 
 
 }//namespace amax
