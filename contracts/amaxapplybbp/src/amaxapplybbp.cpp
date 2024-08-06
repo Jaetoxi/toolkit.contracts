@@ -182,7 +182,7 @@ using namespace mdao;
          CHECKC(false, err::PARAM_ERROR, "Invalid param: " + quantity.to_string())
       }
    
-      auto check_ret = _check_request_quant(plan_itr->quants, quants);
+      auto check_ret = _check_request_quant(plan_itr->quants, quants, plan_itr->min_sum_quant);
       auto nft_check_ret =  _check_request_nft(plan_itr->nfts, nfts);
       if( check_ret == CHECK_UNFINISHED || nft_check_ret == CHECK_UNFINISHED ) {
          db::set(_bbp_t, bbp_itr, _self, [&]( auto& p, bool is_new ) {
@@ -254,7 +254,7 @@ using namespace mdao;
       
       auto from_bank = get_first_receiver();
       
-      _on_receive_asset(from, to, from_bank, asset(0, AMAX_SYMBOL),quantity );
+      _on_receive_asset(from, to, from_bank, asset(0, AMAX_SYMBOL), quantity );
 
    }
 

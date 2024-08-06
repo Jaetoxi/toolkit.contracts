@@ -142,7 +142,7 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
       CHECKC( addcount > 0, err::ACTION_REDUNDANT, "no new voter added" )
    }
 
-   ACTION setplan(const uint64_t& plan_id, const uint64_t& bbp_quota, 
+   ACTION setplan(const uint64_t& plan_id, const uint64_t& bbp_quota, const uint64_t& min_sum_quant,
                map<extended_symbol, asset> quants, 
                map<extended_nsymbol, nasset> nfts){
       _check_admin();
@@ -156,6 +156,7 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
             a.total_bbp_quota    = bbp_quota;
             a.required_bbp_quota = 0;
             a.finish_bbp_quota   = 0;
+            a.min_sum_quant      = min_sum_quant;
             a.quants             = quants;
             a.nfts               = nfts;
             a.created_at         = current_time_point();
@@ -197,8 +198,10 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
 
       int _check_request_quant(
                      const std::map<extended_symbol, asset>&       plan_quants,
-                     const std::map<extended_symbol, asset>&       quants) {
+                     const std::map<extended_symbol, asset>&       quants,
+                     const uint64_t& min_sum_quant) {
          auto ret = CHECK_FINISHED;
+         auto total_quant = 0;
          for(auto& [symb, quant] : plan_quants) {
             if(quants.count(symb) == 0) {
                return CHECK_UNFINISHED;
@@ -206,14 +209,14 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
             if(quants.at(symb) < quant) {
                return CHECK_UNFINISHED;  
             }
-
-            if(quants.at(symb) > quant) {
-               ret = CHECK_NEED_REFUND;  
-            }
+            total_quant += quants.at(symb).amount/calc_precision(quant.symbol.precision());
+         }
+         if(total_quant < min_sum_quant) {
+            return CHECK_UNFINISHED;
          }
          return ret;
-      }
-
+      };
+      
       void _on_receive_asset(const name& from, const name& to, const name& from_bank,
           const asset& quantity, const nasset& nquantity);
 
