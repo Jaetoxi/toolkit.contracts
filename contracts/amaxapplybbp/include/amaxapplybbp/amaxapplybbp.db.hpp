@@ -38,7 +38,7 @@ static constexpr uint32_t CHECK_UNFINISHED          = 0;
 static constexpr uint32_t CHECK_NEED_REFUND         = 1;
 static constexpr uint32_t CHECK_FINISHED            = 2;
 
-namespace ProducerStatus {
+namespace BbpStatus {
     static constexpr eosio::name INIT           { "init"_n   };
     static constexpr eosio::name REFUNDING      { "refunding"_n   };
     static constexpr eosio::name FINISHED       { "finished"_n  };
