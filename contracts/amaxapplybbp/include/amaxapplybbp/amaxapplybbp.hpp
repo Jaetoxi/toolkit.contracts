@@ -182,11 +182,10 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
 
    ACTION withdraw(const name& owner){
       _check_admin();
+      _refund(owner);
    }
 
-   void  _check_admin(){
-      CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
-   }
+
    
    private:
       global_singleton        _global;
@@ -256,5 +255,11 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
                   const string&     url,
                   const uint32_t&   location,
                   const std::optional<eosio::public_key> pub_mkey);
+
+      void _check_admin(){
+         CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
+      }
+
+      void _refund(const name& owner);
 };
 } //namespace amax

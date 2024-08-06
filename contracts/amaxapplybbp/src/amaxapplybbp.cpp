@@ -166,7 +166,6 @@ using namespace mdao;
       if(!ret) return;
 
       _on_asset_finished(from, from_bank, amax_quant);
-     
    }
 
    bool amaxapplybbp::_on_receive_asset(const name& from, const name& to, const name& from_bank,
@@ -179,6 +178,7 @@ using namespace mdao;
 
       auto plan_itr = _plan_t.find(bbp_itr->plan_id);
       CHECKC( plan_itr != _plan_t.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
+      CHECKC( plan_itr->finish_bbp_quota <= plan_itr->total_bbp_quota, err::STATUS_ERROR, "this plan already finished")
       amax_quant = plan_itr->quants.at(extended_symbol(AMAX_SYMBOL, AMAX_BANK));
 
       auto quants = bbp_itr->quants;
@@ -283,5 +283,31 @@ using namespace mdao;
       });
       _call_set_producer(owner, from_bank, voter_itr->voter_account, amax_quant);
    };
+
+   void amaxapplybbp::_refund(const name& owner) {
+      auto bbp_itr = _bbp_t.find(owner.value);
+      CHECKC( bbp_itr != _bbp_t.end(), err::RECORD_NOT_FOUND, "bbp not found:" + owner.to_string())
+      CHECKC( bbp_itr->status == BbpStatus::REFUNDING, err::STATUS_ERROR, "Information cant been changed")
+
+      auto plan_itr = _plan_t.find(bbp_itr->plan_id);
+      CHECKC( plan_itr != _plan_t.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
+      auto plan_quants  = plan_itr->quants;
+      auto quants       = bbp_itr->quants;
+      auto nfts         = bbp_itr->nfts;
+
+      // for(auto& [symb, plan_quant] : plan_quants) {
+      //    CHECKC( quants.count(symb) > 0, err::RECORD_NOT_FOUND, "plan not found symbol: ")
+      
+      //       if(quants.at(symb) < quant) {
+      //          return CHECK_UNFINISHED;  
+      //       }
+      // }
+      //  db::set(_bbp_t, bbp_itr, _self, [&]( auto& p, bool is_new ) {
+      //    p.status = BbpStatus::FINISHED;
+      //    p.updated_at = current_time_point();
+      // });
+
+
+   }
 
 }//namespace amax
