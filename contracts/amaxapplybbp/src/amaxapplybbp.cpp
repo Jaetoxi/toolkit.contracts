@@ -66,8 +66,8 @@ using namespace mdao;
    //                            const string& issuance_plan){
 
    //    require_auth( owner );
-   //    auto prod_itr = _producer_tbl.find(owner.value);
-   //    CHECKC( prod_itr != _producer_tbl.end(),err::RECORD_EXISTING,"Application submitted:" + owner.to_string())
+   //    auto bbp_itr = _producer_tbl.find(owner.value);
+   //    CHECKC( bbp_itr != _producer_tbl.end(),err::RECORD_EXISTING,"Application submitted:" + owner.to_string())
 
    //    _set_producer(owner,logo_uri,org_name,org_info,dao_code,reward_shared_plan,manifesto,issuance_plan);
    // }
@@ -90,12 +90,12 @@ using namespace mdao;
       CHECKC( org_name.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_name size must be <= " + to_string(MAX_TITLE_SIZE))
       CHECKC( org_info.size() <= MAX_TITLE_SIZE ,err::OVERSIZED ,"org_info size must be <= " + to_string(MAX_TITLE_SIZE))
 
-      auto prod_itr = _bbp_t.find(owner.value);
-      if(prod_itr !=  _bbp_t.end() && (prod_itr->status != ProducerStatus::INIT)){
+      auto bbp_itr = _bbp_t.find(owner.value);
+      if(bbp_itr !=  _bbp_t.end() && (bbp_itr->status != ProducerStatus::INIT)){
          CHECKC( false, err::STATUS_ERROR, "Information cant been changed")
       } 
 
-      if(prod_itr ==_bbp_t.end()){
+      if(bbp_itr ==_bbp_t.end()){
          //update plan
          db::set(_plan_t, plan_itr, _self, [&]( auto& p, bool is_new ) {
             p.required_bbp_quota =  plan_itr->required_bbp_quota + 1;
@@ -103,7 +103,7 @@ using namespace mdao;
       }
 
 
-      db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
+      db::set(_bbp_t, bbp_itr, _self, [&]( auto& p, bool is_new ) {
          if (is_new) {
             p.owner        = owner;
             p.created_at   = current_time_point();
@@ -134,49 +134,69 @@ using namespace mdao;
    void amaxapplybbp::onrecv_amax( name from, name to, asset quantity, string memo ){
       if (from == get_self()) { return; }
       if (to != _self) { return; }
+      auto from_bank = get_first_receiver();
 
-      if (from == get_self()) { return; }
-      if( to != _self ) return;
-      CHECKC(get_first_receiver() == AMAX_BANK, err::STATUS_ERROR, "Invalid bank:" + get_first_receiver().to_string()) 
-      auto prod_itr = _bbp_t.find(from.value);
-      CHECKC( prod_itr != _bbp_t.end(), err::STATUS_ERROR, "bbp not found:" + from.to_string())
+      _on_receive_asset(from, to, from_bank, quantity, nasset{0, nsymbol{1, 1}});
+   }
+
+   void amaxapplybbp::_on_receive_asset(const name& from, const name& to, const name& from_bank,
+          const asset& quantity, const nasset& nquantity) {
+         
+      auto bbp_itr = _bbp_t.find(from.value);
+      CHECKC( bbp_itr != _bbp_t.end(), err::STATUS_ERROR, "bbp not found:" + from.to_string())
       //进行中
-      CHECKC( prod_itr->status == ProducerStatus::INIT, err::STATUS_ERROR, "Information cant been changed")
+      CHECKC( bbp_itr->status == ProducerStatus::INIT, err::STATUS_ERROR, "Information cant been changed")
       CHECKC( quantity.symbol == AMAX_SYMBOL, err::SYMBOL_MISMATCH, "Invalid symbol" )
 
-      auto from_bank = get_first_receiver();
-      auto symbol = quantity.symbol;
-      const auto& symb = extended_symbol(quantity.symbol, from_bank);
-
-      //check project symbol required
-      auto plan_itr = _plan_t.find(prod_itr->plan_id);
+      auto plan_itr = _plan_t.find(bbp_itr->plan_id);
       CHECKC( plan_itr != _plan_t.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
-      CHECKC( plan_itr->quants.find(symb) != plan_itr->quants.end(), err::SYMBOL_MISMATCH, "Invalid symbol" );
-      auto plan_quants = plan_itr->quants;
-      CHECKC(plan_quants.count(symb) > 0, err::RECORD_NOT_FOUND, "plan not found symbol: ")
-      auto quants = prod_itr->quants;
 
-      if(quants.count(symb) == 0){ 
-         quants[symb] = quantity;
+      auto quants = bbp_itr->quants;
+      auto nfts = bbp_itr->nfts;
+
+      if(quantity.amount > 0){
+         const auto& symb = extended_symbol(quantity.symbol, from_bank);
+         CHECKC( plan_itr->quants.find(symb) != plan_itr->quants.end(), err::SYMBOL_MISMATCH, "Invalid symbol" );
+
+         //check project symbol required
+         auto plan_quants = plan_itr->quants;
+         CHECKC(plan_quants.count(symb) > 0, err::RECORD_NOT_FOUND, "plan not found symbol: ")
+         if(quants.count(symb) == 0){ 
+            quants[symb] = quantity;
+         } else {
+            quants[symb] += quantity;
+         }
+      } else if(nquantity.amount > 0) {
+         const auto& symb = extended_nsymbol(nquantity.symbol, from_bank);
+         CHECKC( plan_itr->nfts.find(symb) != plan_itr->nfts.end(), err::SYMBOL_MISMATCH, "Invalid symbol" );
+
+         //check project symbol required
+         auto plan_nfts = plan_itr->nfts;
+         CHECKC(plan_nfts.count(symb) > 0, err::RECORD_NOT_FOUND, "plan not found symbol: ")
+         if(nfts.count(symb) == 0){ 
+            nfts[symb] = nquantity;
+         } else {
+            nfts[symb] += nquantity;
+         }
       } else {
-         quants[symb] += quantity;
+         CHECKC(false, err::PARAM_ERROR, "Invalid param: " + quantity.to_string())
       }
-
+   
       auto check_ret = _check_request_quant(plan_itr->quants, quants);
-      auto nft_check_ret =  _check_request_nft(plan_itr->nfts, prod_itr->nfts);
+      auto nft_check_ret =  _check_request_nft(plan_itr->nfts, nfts);
       if( check_ret == CHECK_UNFINISHED || nft_check_ret == CHECK_UNFINISHED ) {
-         db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
+         db::set(_bbp_t, bbp_itr, _self, [&]( auto& p, bool is_new ) {
             p.quants = quants;
-            p.nfts = prod_itr->nfts;
+            p.nfts = bbp_itr->nfts;
             p.updated_at = current_time_point();
          });
          return;
       }
       
       //paid finished
-      db::set(_bbp_t, prod_itr, _self, [&]( auto& p, bool is_new ) {
+      db::set(_bbp_t, bbp_itr, _self, [&]( auto& p, bool is_new ) {
          p.quants = quants;
-         // p.nfts = prod_itr->nfts;
+         // p.nfts = bbp_itr->nfts;
          if(check_ret == CHECK_FINISHED && nft_check_ret == CHECK_FINISHED){
             p.status = ProducerStatus::FINISHED;
          } else {
@@ -207,7 +227,7 @@ using namespace mdao;
       //transfer to voter
       TRANSFER( from_bank, voter_account, quantity, "bbp");
 
-
+   
       //add producer
       auto itr = _bbp_t.find(owner.value);
       CHECKC( itr !=  _bbp_t.end(),err::RECORD_NOT_FOUND ,"bbp not found:" + owner.to_string())
@@ -231,6 +251,11 @@ using namespace mdao;
    void amaxapplybbp::onrecv_nft( name from, name to, nasset quantity, string memo ){
       if (from == get_self()) { return; }
       if (to != _self) { return; }
+      
+      auto from_bank = get_first_receiver();
+      
+      _on_receive_asset(from, to, from_bank, asset(0, AMAX_SYMBOL),quantity );
+
    }
 
 }//namespace amax

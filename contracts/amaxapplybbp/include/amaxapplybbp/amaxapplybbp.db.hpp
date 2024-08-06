@@ -98,7 +98,7 @@ TBL bbp_t {
 
     time_point_sec                  created_at;
     time_point_sec                  updated_at;
-    map<extended_symbol, asset>       quants;
+    map<extended_symbol, asset>     quants;
     map<extended_nsymbol, nasset>   nfts;
     eosio::public_key               mkey;
 

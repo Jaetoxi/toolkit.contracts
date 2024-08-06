@@ -214,6 +214,9 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
          return ret;
       }
 
+      void _on_receive_asset(const name& from, const name& to, const name& from_bank,
+          const asset& quantity, const nasset& nquantity);
+
       int _check_request_nft(
                      const std::map<extended_nsymbol, nasset>&       plan_nfts,
                      const std::map<extended_nsymbol, nasset>&       nfts) {
