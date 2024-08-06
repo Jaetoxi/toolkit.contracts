@@ -2,6 +2,8 @@ con_bbp=bbptest1
 tnew $con_bbp
 tset $con_bbp amaxapplybbp
 
+tcli set account permission $con_bbp active --add-code
+
 con_bps=amaxapplybps
 tnew $con_bps
 tset $con_bps amaxapplybps
@@ -28,14 +30,15 @@ bbp_quota=3
 tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'", 1, [[["8,AMAX","amax.token"],"1.00000000 AMAX"]],[[[[1,0],"amax.ntoken"],[1,[1,0]]]]]' -p $con_bbp
 plan_id=3
 bbp_quota=3
-tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",1, [[["8,AMAX", "amax.token"], "1.00000000 AMAX"], [["6,MUSDT", "amax.mtoken"], "1.000000 MUSDT"]], []' -p $con_bbp
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",1, [[["8,AMAX", "amax.token"],"1.00000000 AMAX"], [["6,MUSDT", "amax.mtoken"], "1.000000 MUSDT"]], []]' -p $con_bbp
+tcli get table $con_bbp $con_bbp "plans"
 
 tnew bbpvote11
 tnew bbpvote21
 tnew bbpvote31
 
 tpush $con_bbp addvoters '{"voters":["bbpvote11","bbpvote21","bbpvote31"] }' -p $con_bbp
-tcli get table $con_bbp $con_bbp "voterlist"
+tcli get table $con_bbp $con_bbp "voters"
 
 
 tcli get table $con_bbp $con_bbp "global"
@@ -52,7 +55,7 @@ tcli get table $con_bbp $con_bbp "bbps"
 tcli push action  $con_bbp tsetvoteridx '[18]' -p $con_bbp
 
 
-voter=bbpvote2
+voter=bbpvote21
 tpush amax updateauth '{"account":"'$voter'","permission":"active","parent":"owner","auth":{"threshold":1,"keys":[],"waits":[],"accounts":[{"weight":1,"permission":{"actor":"'$con_bbp'","permission":"active"}}]}}' -p $voter
 
 
