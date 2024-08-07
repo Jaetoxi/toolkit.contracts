@@ -111,11 +111,8 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
 
    } 
 
-   [[eosio::on_notify("amax.mtoken::transfer")]]
-   void onrecv_mtoken( name from, name to, asset quantity, string memo );
-
-   [[eosio::on_notify("amax.token::transfer")]]
-   void onrecv_amax( name from, name to, asset quantity, string memo );
+   [[eosio::on_notify("*::transfer")]]
+   void ontoken_transfer( name from, name to, asset quantity, string memo );
 
    [[eosio::on_notify("amax.ntoken::transfer")]]
    void onrecv_nft( name from, name to, nasset quantity, string memo );

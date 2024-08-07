@@ -125,22 +125,8 @@ using namespace mdao;
       });
    }
 
-   [[eosio::on_notify("amax.mtoken::transfer")]]
-   void amaxapplybbp::onrecv_mtoken( name from, name to, asset quantity, string memo ){
-      if (from == get_self()) { return; }
-      if (to != _self) { return; }
-      if(memo == "refuel") { return; }
-
-      auto from_bank = get_first_receiver();
-      asset amax_quant;
-      auto ret =  _on_receive_asset(from, to, from_bank, quantity, nasset{0, nsymbol{1, 1}}, amax_quant);
-      if(!ret) return;
-
-      _on_asset_finished(from, from_bank, amax_quant);
-   }
-
-   [[eosio::on_notify("amax.token::transfer")]]
-   void amaxapplybbp::onrecv_amax( name from, name to, asset quantity, string memo ){
+   [[eosio::on_notify("*::transfer")]]
+   void amaxapplybbp::ontoken_transfer( name from, name to, asset quantity, string memo ){
       if (from == get_self()) { return; }
       if (to != _self) { return; }
       if(memo == "refuel") { return; }
