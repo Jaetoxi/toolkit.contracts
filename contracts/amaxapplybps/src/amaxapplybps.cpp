@@ -17,8 +17,8 @@ using namespace amax;
                               const eosio::public_key& mpubkey,
                               const std::string& url, uint16_t location, std::optional<uint32_t> reward_shared_ratio){
       require_auth( submiter );
-      CHECKC( submiter == _gstate.admin || submiter == _gstate.bbp_contract,err::NO_AUTH,
-               "Missing required authority of admin: " + submiter.to_string())
+      CHECKC( submiter == _gstate.admin || submiter == _gstate.bbp_contract, err::NO_AUTH,
+               "no auth permission: " + submiter.to_string())
       amax_system::addproducer_action addproducer_act( _gstate.sys_contract, {_self, "active"_n} );
       block_signing_authority producer_authority = convert_to_block_signing_authority(mpubkey);
 
