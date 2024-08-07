@@ -288,6 +288,7 @@ using namespace mdao;
       auto bbp_itr = _bbp_t.find(owner.value);
       CHECKC( bbp_itr != _bbp_t.end(), err::RECORD_NOT_FOUND, "bbp not found:" + owner.to_string())
       CHECKC( bbp_itr->status == BbpStatus::REFUNDING, err::STATUS_ERROR, "Information cant been changed")
+      CHECKC( refund_quant.amount > 0, err::PARAM_ERROR, "Invalid param: " + refund_quant.to_string())
 
       auto plan_itr = _plan_t.find(bbp_itr->plan_id);
       CHECKC( plan_itr != _plan_t.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
@@ -301,13 +302,16 @@ using namespace mdao;
          if(symb == symbol) {
             quant -=refund_quant;
             CHECKC(quant >= plan_quant, err::INSUFFICIENT_FUNDS, "Insufficient funds")
+            TRANSFER( symbol.get_contract(), owner, refund_quant, "refund");
          }
          total_amount += quant.amount/calc_precision(quant.symbol.precision());
+         quants[symb] = quant;
       }
       CHECKC(total_amount >= plan_itr->min_sum_quant, err::INSUFFICIENT_FUNDS, "Insufficient funds")
       if(total_amount == plan_itr->min_sum_quant) {
          db::set(_bbp_t, bbp_itr, _self, [&]( auto& p, bool is_new ) {
             p.status = BbpStatus::FINISHED;
+            p.quants = quants;
             p.updated_at = current_time_point();
          });
       }
