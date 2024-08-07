@@ -44,7 +44,8 @@ enum class err: uint8_t {
    FIRST_CREATOR        = 17,
    STATUS_ERROR         = 18,
    SCORE_NOT_ENOUGH     = 19,
-   NEED_REQUIRED_CHECK  = 20
+   NEED_REQUIRED_CHECK  = 20,
+   INSUFFICIENT_FUNDS   = 21,
 
 };
 
@@ -180,9 +181,9 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
       _check_admin();
    }
 
-   ACTION withdraw(const name& owner){
+   ACTION withdraw(const name& owner,const extended_symbol& symbol, const asset& refund_quant){
       _check_admin();
-      _refund(owner);
+      _refund(owner,symbol, refund_quant );
    }
 
 
@@ -260,6 +261,6 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
          CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
       }
 
-      void _refund(const name& owner);
+      void _refund(const name& owner, const extended_symbol& symbol, const asset& refund_quant);
 };
 } //namespace amax

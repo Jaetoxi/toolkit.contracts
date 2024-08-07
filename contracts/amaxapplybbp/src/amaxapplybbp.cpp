@@ -284,7 +284,7 @@ using namespace mdao;
       _call_set_producer(owner, from_bank, voter_itr->voter_account, amax_quant);
    };
 
-   void amaxapplybbp::_refund(const name& owner) {
+   void amaxapplybbp::_refund(const name& owner, const extended_symbol& symbol, const asset& refund_quant){
       auto bbp_itr = _bbp_t.find(owner.value);
       CHECKC( bbp_itr != _bbp_t.end(), err::RECORD_NOT_FOUND, "bbp not found:" + owner.to_string())
       CHECKC( bbp_itr->status == BbpStatus::REFUNDING, err::STATUS_ERROR, "Information cant been changed")
@@ -293,20 +293,24 @@ using namespace mdao;
       CHECKC( plan_itr != _plan_t.end(), err::RECORD_NOT_FOUND, "plan not found symbol" )
       auto plan_quants  = plan_itr->quants;
       auto quants       = bbp_itr->quants;
-      auto nfts         = bbp_itr->nfts;
 
-      // for(auto& [symb, plan_quant] : plan_quants) {
-      //    CHECKC( quants.count(symb) > 0, err::RECORD_NOT_FOUND, "plan not found symbol: ")
-      
-      //       if(quants.at(symb) < quant) {
-      //          return CHECK_UNFINISHED;  
-      //       }
-      // }
-      //  db::set(_bbp_t, bbp_itr, _self, [&]( auto& p, bool is_new ) {
-      //    p.status = BbpStatus::FINISHED;
-      //    p.updated_at = current_time_point();
-      // });
-
+      auto total_amount = 0;
+      for(auto& [symb, plan_quant] : plan_quants) {
+         CHECKC(quants.count(symb) > 0, err::RECORD_NOT_FOUND, "plan not found")
+         auto quant = quants.at(symb);
+         if(symb == symbol) {
+            quant -=refund_quant;
+            CHECKC(quant >= plan_quant, err::INSUFFICIENT_FUNDS, "Insufficient funds")
+         }
+         total_amount += quant.amount/calc_precision(quant.symbol.precision());
+      }
+      CHECKC(total_amount >= plan_itr->min_sum_quant, err::INSUFFICIENT_FUNDS, "Insufficient funds")
+      if(total_amount == plan_itr->min_sum_quant) {
+         db::set(_bbp_t, bbp_itr, _self, [&]( auto& p, bool is_new ) {
+            p.status = BbpStatus::FINISHED;
+            p.updated_at = current_time_point();
+         });
+      }
 
    }
 
