@@ -4,7 +4,7 @@ creator=bbp
 owner=amax.dao@active
 activer=bbpadmin@active
 amaxpool=amax
-amaxquant="6.00000000 AMAX"
+amaxquant='600.00000000 AMAX'
 i=0
 filename="voter.txt"
 function create_account(){
@@ -16,15 +16,17 @@ function create_account(){
     done
 }
 
-
 function transfer_amax(){
     i=$((i+1))
     cat $filename | while IFS= read -r line; do
         if [ $i -lt 35 ];then
             acct=$line
             result=`$mcli get currency balance amax.token $acct`
-            amax_quant=`echo $res | grep MUSDT`
-            $mcli push action amax.token  transfer '["'$amaxpool'", "'$acct'", "6.00000000 AMAX", ""]' -p $amaxpool
+            amax_quant=`echo $res | grep AMAX`
+            if [ -z "$amax_quant" ];then
+                echo "-----------transfer amax to account: $acct ------------"
+                $mcli push action amax.token transfer '["'$amaxpool'", "'$acct'", "'$amaxquant'", ""]' -p $amaxpool
+            fi
         else
             break
         fi

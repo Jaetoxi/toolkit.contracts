@@ -104,7 +104,7 @@ TBL bbp_t {
 
     bbp_t(){}
     uint64_t primary_key()const { return owner.value ; }
-    uint64_t by_plan_id() const { return plan_id; }
+    uint64_t by_plan_id() const { return plan_id<<32 | created_at.utc_seconds; }
 
     typedef eosio::multi_index< "bbps"_n,  bbp_t,
         indexed_by<"planidx"_n, const_mem_fun<bbp_t, uint64_t, &bbp_t::by_plan_id> >
