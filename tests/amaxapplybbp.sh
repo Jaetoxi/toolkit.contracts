@@ -8,10 +8,11 @@ con_bps=amaxapplybps
 tnew $con_bps
 tset $con_bps amaxapplybps
 
-
+bbpadmin=bbpadmin
+mpkey=AM7n5TBaSnZLkrn8yYk54YveYoyQujJaMGK546gPze1Vy5MsM3S6
 # tnew bbpadmin
-tpush $con_bbp init '["bbpadmin","AM7n5TBaSnZLkrn8yYk54YveYoyQujJaMGK546gPze1Vy5MsM3S6","'$con_bps'"]' -p $con_bbp
-tpush $con_bps init '["bbpadmin","'$con_bbp'"]' -p $con_bps
+tpush $con_bbp init '["'$bbpadmin'","'$mpkey'","'$con_bps'"]' -p $con_bbp
+tpush $con_bps init '["'$bbpadmin'","'$con_bbp'"]' -p $con_bps
 tcli get table $con_bbp $con_bbp "global"
 tcli get table $con_bps $con_bps "global"
 
@@ -46,6 +47,7 @@ tnew bbpvote31
 
 tpush $con_bbp addvoters '{"voters":["bbpvote11","bbpvote21","bbpvote31"] }' -p $con_bbp
 tcli get table $con_bbp $con_bbp "voters"
+tcli get table $con_bbp $con_bbp "plans"
 
 
 tcli get table $con_bbp $con_bbp "global"
@@ -57,14 +59,19 @@ tpush $con_bbp applybbp '["'$bbp_owner2'",4,"logo_uri","org_name", "org_info","m
 
 tcli push action amax.token  transfer '["amax", "'$bbp_owner1'", "10.00000000 AMAX", ""]' -p amax
 
-tcli push action amax.token  transfer '["'$bbp_owner1'", "'$con_bbp'", "1.00001000 AMAX", ""]' -p $bbp_owner1
+bbpowner=bbp.owner2
+tcli push action amax.mtoken  transfer '["ad", "'$bbpowner'", "10.000000 MUSDT", ""]' -p ad
+
+
+tcli push action amax.token  transfer '["'$bbpowner'", "'$con_bbp'", "1.00001000 AMAX", ""]' -p $bbpowner
+tcli push action amax.mtoken  transfer '["'$bbpowner'", "'$con_bbp'", "1.000010 MUSDT", ""]' -p $bbpowner
 
 tcli get table $con_bbp $con_bbp "bbps"
 
 tcli push action  $con_bbp tsetvoteridx '[18]' -p $con_bbp
 
 
-voter=bbpvote11
+voter=bbpvote31
 tpush amax updateauth '{"account":"'$voter'","permission":"active","parent":"owner","auth":{"threshold":1,"keys":[],"waits":[],"accounts":[{"weight":1,"permission":{"actor":"'$con_bbp'","permission":"active"}}]}}' -p $voter
 
 

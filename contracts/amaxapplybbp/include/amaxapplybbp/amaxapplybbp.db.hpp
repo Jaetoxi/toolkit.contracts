@@ -104,8 +104,11 @@ TBL bbp_t {
 
     bbp_t(){}
     uint64_t primary_key()const { return owner.value ; }
+    uint64_t by_plan_id() const { return plan_id; }
 
-    typedef eosio::multi_index< "bbps"_n,  bbp_t > idx_t;
+    typedef eosio::multi_index< "bbps"_n,  bbp_t,
+        indexed_by<"planidx"_n, const_mem_fun<bbp_t, uint64_t, &bbp_t::by_plan_id> >
+                     > idx_t;
 
     EOSLIB_SERIALIZE(bbp_t, (owner)(plan_id)(logo_uri)(org_name)(org_info)(dao_code)
                             (manifesto)(email)(url)(location)(status)
