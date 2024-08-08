@@ -23,7 +23,9 @@ using namespace amax;
       block_signing_authority producer_authority = convert_to_block_signing_authority(mpubkey);
 
       addproducer_act.send(producter, producer_authority, url, location, reward_shared_ratio);
-      //添加公钥
+
+      _gstate.applied_bbps_count++;
+
    }
 
 }//namespace amax

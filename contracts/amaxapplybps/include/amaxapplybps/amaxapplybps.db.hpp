@@ -33,7 +33,7 @@ NTBL("global") global_t {
     name                bbp_contract;
     name                sys_contract = name("amax");
     uint32_t            total_bbps_count;
-    uint32_t            applied_bbps_count;
+    uint32_t            applied_bbps_count  = 0;
     
     EOSLIB_SERIALIZE( global_t, (admin)(bbp_contract)(sys_contract)(total_bbps_count)(applied_bbps_count))
 

@@ -77,11 +77,11 @@ class [[eosio::contract("amaxapplybps")]] amaxapplybps : public contract {
 
     ~amaxapplybps() { _global.set( _gstate, get_self() ); }
 
-
-   ACTION init( const name& admin, const name& bbp_contract){
+   ACTION init( const name& admin, const name& bbp_contract, const uint32_t& total_bbps_count){
       require_auth( _self );
-      _gstate.admin           = admin;
-      _gstate.bbp_contract    = bbp_contract;
+      _gstate.admin              = admin;
+      _gstate.bbp_contract       = bbp_contract;
+      _gstate.total_bbps_count   = total_bbps_count;
    }
 
    ACTION addproducer(const name& submiter, const name& producter,
