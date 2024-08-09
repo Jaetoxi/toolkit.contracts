@@ -2,9 +2,9 @@
 mcli="amcli -u http://sh-amnod.vmi.amax.dev:18188" 
 creator=bbp
 owner=amax.dao@active
-activer=bbptest3@active
+activer=amaxapplybbp@active
 i=0
-filename="voter.txt"
+filename="20-voter.txt"
 function create_account(){
     cat $filename | while IFS= read -r line; do
         # 在这里对每一行的内容做操作
