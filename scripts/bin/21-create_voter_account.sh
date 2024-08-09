@@ -1,5 +1,6 @@
 #!/bin/bash
-mcli="amcli -u http://sh-amnod.vmi.amax.dev:18188" 
+# mcli="amcli -u http://sh-amnod.vmi.amax.dev:18188" 
+mcli='amcli -u https://expnode.amaxscan.io'
 creator=bbp
 owner=amax.dao@active
 activer=amaxapplybbp@active
