@@ -2,7 +2,7 @@
 mcli="amcli -u http://sh-amnod.vmi.amax.dev:18188" 
 creator=bbp
 owner=amax.dao@active
-activer=bbpadmin@active
+activer=bbp@active
 amaxpool=amax
 amaxquant='1000.00000000'
 votequant='1000.0000'

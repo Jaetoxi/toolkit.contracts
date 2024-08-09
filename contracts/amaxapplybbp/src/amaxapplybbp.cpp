@@ -175,8 +175,6 @@ using namespace mdao;
       map<extended_symbol, asset> plan_quants;
       map<extended_nsymbol, nasset> plan_nfts;
       if(quantity.amount > 0){
-         CHECKC( plan_itr->quants.find(symb) != plan_itr->quants.end(), err::SYMBOL_MISMATCH, "Invalid symbol" );
-
          //check project symbol required
          plan_quants = plan_itr->quants;
          CHECKC(plan_quants.count(symb) > 0, err::RECORD_NOT_FOUND, "plan not found symbol: ")
@@ -186,10 +184,13 @@ using namespace mdao;
             quants[symb] += quantity;
          }
       } else if(nquantity.amount > 0) {
-         CHECKC( plan_itr->nfts.find(nsymb) != plan_itr->nfts.end(), err::SYMBOL_MISMATCH, "Invalid symbol" );
+         plan_nfts = plan_itr->nfts;
 
          //check project symbol required
-         plan_nfts = plan_itr->nfts;
+         CHECKC(false, err::PARAM_ERROR, "Invalid param: " + from_bank.to_string() + " " + to_string(plan_nfts.size()) + " " + 
+                                       nsymb.get_contract().to_string() + " " + to_string(nsymb.get_nsymbol().id) + " " + to_string(nsymb.get_nsymbol().parent_id)
+                                       )
+         plan_nfts.at
          CHECKC(plan_nfts.count(nsymb) > 0, err::RECORD_NOT_FOUND, "plan not found symbol: ")
          if(nfts.count(nsymb) == 0){ 
             nfts[nsymb] = nquantity;
@@ -199,7 +200,6 @@ using namespace mdao;
       } else {
          CHECKC(false, err::PARAM_ERROR, "Invalid param: " + quantity.to_string())
       }
-
 
       auto check_ret       = _check_request_quant(plan_itr->quants, quants, plan_itr->min_sum_quant);
       auto nft_check_ret   = _check_request_nft(plan_itr->nfts, nfts);
