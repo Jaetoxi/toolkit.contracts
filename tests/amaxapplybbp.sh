@@ -1,4 +1,4 @@
-con_bbp=bbptest1
+con_bbp=bbptest4
 tnew $con_bbp
 tset $con_bbp amaxapplybbp
 
@@ -12,7 +12,7 @@ bbpadmin=bbpadmin
 mpkey=AM7n5TBaSnZLkrn8yYk54YveYoyQujJaMGK546gPze1Vy5MsM3S6
 # tnew bbpadmin
 tpush $con_bbp init '["'$bbpadmin'","'$mpkey'","'$con_bps'"]' -p $con_bbp
-tpush $con_bps init '["'$bbpadmin'","'$con_bbp'"]' -p $con_bps
+tpush $con_bps init '["'$bbpadmin'","'$con_bbp'",1200]' -p $con_bps
 tcli get table $con_bbp $con_bbp "global"
 tcli get table $con_bps $con_bps "global"
 
@@ -25,27 +25,22 @@ tnew $bbp_owner2
 
 plan_id=1
 bbp_quota=24
-tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",1,[[["8,AMAX", "amax.token"], "1.00000000 AMAX"]], []]' -p $con_bbp
-
-
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",12,[[["8,AMAX", "amax.token"], "12.00000000 AMAX"]], []]' -p $con_bbp
 tcli get table amax.ntoken ad "accounts"
 plan_id=2
 bbp_quota=3
-tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'", 1, [[["8,AMAX","amax.token"],"1.00000000 AMAX"]],[[[[1,0],"amax.ntoken"],[1,[1,0]]]]]' -p $con_bbp
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'", 12, [[["8,AMAX","amax.token"],"12.00000000 AMAX"]],[[[[1001,0],"amax.ntoken"],[1,[1001,0]]]]]' -p $con_bbp
 plan_id=3
 bbp_quota=3
-tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",1, [[["8,AMAX", "amax.token"],"1.00000000 AMAX"], [["6,MUSDT", "amax.mtoken"], "1.000000 MUSDT"]], []]' -p $con_bbp
+tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",12, [[["8,AMAX", "amax.token"],"6.00000000 AMAX"], [["6,MUSDT", "amax.mtoken"], "0.000000 MUSDT"]], []]' -p $con_bbp
 tcli get table $con_bbp $con_bbp "plans"
-plan_id=4
-bbp_quota=3
-tpush $con_bbp setplan '["'$plan_id'","'$bbp_quota'",3, [[["8,AMAX", "amax.token"],"1.00000000 AMAX"], [["6,MUSDT", "amax.mtoken"], "1.000000 MUSDT"]], []]' -p $con_bbp
 
 
-tnew bbpvote11
-tnew bbpvote21
-tnew bbpvote31
+tnew bbpvote12
+tnew bbpvote22
+tnew bbpvote32
 
-tpush $con_bbp addvoters '{"voters":["bbpvote11","bbpvote21","bbpvote31"] }' -p $con_bbp
+tpush $con_bbp addvoters '{"voters":["bbpvote12","bbpvote22","bbpvote32"] }' -p $con_bbp
 tcli get table $con_bbp $con_bbp "voters"
 tcli get table $con_bbp $con_bbp "plans"
 
@@ -55,7 +50,7 @@ tcli get table $con_bbp $con_bbp "global"
 tpush $con_bbp applybbp '["'$bbp_owner1'",1,"logo_uri","org_name", "org_info","mail","manifesto","url",1232, null]' -p $bbp_owner1
 tcli get table $con_bbp $con_bbp "bbps"
 
-tpush $con_bbp applybbp '["'$bbp_owner2'",4,"logo_uri","org_name", "org_info","mail","manifesto","url",1232, null]' -p $bbp_owner2
+tpush $con_bbp applybbp '["'$bbp_owner2'",2,"logo_uri","org_name", "org_info","mail","manifesto","url",1232, null]' -p $bbp_owner2
 
 tcli push action amax.token  transfer '["amax", "'$bbp_owner1'", "10.00000000 AMAX", ""]' -p amax
 

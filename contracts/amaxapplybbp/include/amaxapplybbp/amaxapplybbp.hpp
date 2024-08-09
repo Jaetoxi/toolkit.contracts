@@ -83,6 +83,10 @@ class [[eosio::contract("amaxapplybbp")]] amaxapplybbp : public contract {
     }
 
     ~amaxapplybbp() { _global.set( _gstate, get_self() ); }
+   
+   ACTION version() {
+      CHECKC(false, err::STATUS_ERROR, "version 1.0.0")
+   }
 
    ACTION init( const name& admin, const eosio::public_key& bbp_mkey, const name& bps_contract){
       require_auth( _self );
