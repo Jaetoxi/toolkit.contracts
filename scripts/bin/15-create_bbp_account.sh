@@ -1,9 +1,10 @@
 #!/bin/bash
-mcli="amcli -u http://sh-amnod.vmi.amax.dev:18188" 
+#mcli="amcli -u http://sh-amnod.vmi.amax.dev:18188" 
+mcli='amcli -u https://vmaxmall.amaxscan.io'
 creator=bbp
 owner=amax.dao@active
-activer=bbp@active
-amaxpool=amax
+activer=amaxapplybbp@active
+amaxpool=amaxapplybbp
 amaxquant='1000.00000000'
 votequant='1000.0000'
 i=0
@@ -16,6 +17,7 @@ function create_account(){
         $mcli system newaccount --stake-net "0.005000 AMAX" --stake-cpu "0.005000 AMAX" --buy-ram-kbytes 4 $creator $acct $owner $activer -p bbp
     done
 }
+create_account
 
 function transfer_amax(){
     i=$((i+1))
@@ -53,7 +55,7 @@ function add_voter(){
         fi
     done
 }
-add_voter
+#add_voter
 
 
 
