@@ -181,7 +181,7 @@ TBL plan_t {
     uint64_t                        min_sum_quant = 1200;
     map<extended_symbol, asset>     quants;                 //{amax: 600, amae:0 }
     map<extended_nsymbol, nasset>   nfts;
-    time_point_sec                  start_at;
+    time_point_sec                  started_at;
     time_point_sec                  ended_at;
     time_point_sec                  created_at;
     time_point_sec                  updated_at;
@@ -198,7 +198,7 @@ TBL plan_t {
 
 
     EOSLIB_SERIALIZE(plan_t, (id)(total_bbp_quota)(applied_bbp_quota)(fulfilled_bbp_quota)(min_sum_quant)(quants)(nfts)
-        (start_at)(ended_at)(created_at)(updated_at))
+        (started_at)(ended_at)(created_at)(updated_at))
 
 };
 
