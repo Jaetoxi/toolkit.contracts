@@ -323,6 +323,7 @@ void proxy::tonsubmit(const name& account,
         send_action.account = at.account;
         send_action.name = at.name;
         send_action.data = at.data;
+        CHECKC(send_action.authorization.size() == 0, err::PARAM_ERROR,"authorization must be empty")
         send_action.authorization.emplace_back(permission_level{ account, active_permission });
         actions.push_back(send_action);
     }

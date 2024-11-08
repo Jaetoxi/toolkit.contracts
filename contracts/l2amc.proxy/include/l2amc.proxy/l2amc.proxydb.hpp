@@ -106,7 +106,7 @@ struct [[eosio::action]] action_t{
 
 
 struct [[eosio::action]] unpacked_action_t{
-   vector<action_t>          actions;
+   vector<action_t>                 actions;
    string                           nonce;
    EOSLIB_SERIALIZE(unpacked_action_t,(actions)(nonce))
 };
